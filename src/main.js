@@ -1,4 +1,6 @@
 import state from "./state/state.js";
+import { formatDate, getStatusBadgeClass, getRelevanceBadgeClass, certaintyBadgeClass } from "./utils/format.js";
+import { findEvidenceById, findPersonById, findLocationById, evidenceMentionsPerson } from "./utils/lookups.js";
 
 // ---------------------------------------------------------------------
 // LOCAL STATE
@@ -102,57 +104,6 @@ function loadAllData() {
     loadEvidenceData();
     loadTimelineData();
   });
-}
-
-// ---------------------------------------------------------------------
-// GENERIC LOOKUP HELPERS
-// ---------------------------------------------------------------------
-
-function findEvidenceById(id) {
-  for (var i = 0; i < state.allEvidence.length; i++) {
-    if (state.allEvidence[i].id === id) return state.allEvidence[i];
-  }
-  return null;
-}
-
-function findPersonById(id) {
-  for (var i = 0; i < state.allPeople.length; i++) {
-    if (state.allPeople[i].id === id) return state.allPeople[i];
-  }
-  return null;
-}
-
-function findLocationById(id) {
-  for (var i = 0; i < state.allLocations.length; i++) {
-    if (state.allLocations[i].id === id) return state.allLocations[i];
-  }
-  return null;
-}
-
-function evidenceMentionsPerson(ev, person) {
-  if (!ev.personIds) return false;
-  return ev.personIds.indexOf(person.id) !== -1 || ev.personIds.indexOf(person.name) !== -1;
-}
-
-function formatDate(ts) {
-  if (!ts) return "Unknown date";
-  var d = new Date(ts);
-  if (isNaN(d.getTime())) return ts;
-  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }) +
-    " " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
-}
-
-function getStatusBadgeClass(status) {
-  var s = (status || "").toLowerCase();
-  if (s === "reviewed") return "badge-reviewed";
-  if (s === "flagged") return "badge-flagged";
-  return "badge-unreviewed";
-}
-
-function getRelevanceBadgeClass(relevance) {
-  var r = (relevance || "").toLowerCase();
-  if (r === "relevant") return "badge-relevant";
-  return "badge-unreviewed";
 }
 
 // ---------------------------------------------------------------------
@@ -774,13 +725,6 @@ function renderTimeline() {
       openEvidenceModal(e.target.getAttribute("data-evidence-id"));
     });
   }
-}
-
-function certaintyBadgeClass(certainty) {
-  if (certainty === "confirmed") return "reviewed";
-  if (certainty === "contradictory") return "critical";
-  if (certainty === "reported") return "flagged";
-  return "unreviewed";
 }
 
 // --- Quick-view modal (used from the timeline) -------------------------
