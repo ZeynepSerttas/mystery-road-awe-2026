@@ -1,6 +1,16 @@
 import state from "./state/state.js";
 import { formatDate, getStatusBadgeClass, getRelevanceBadgeClass, certaintyBadgeClass } from "./utils/format.js";
 import { findEvidenceById, findPersonById, findLocationById, evidenceMentionsPerson } from "./utils/lookups.js";
+import {
+  saveBookmarksToStorage,
+  loadBookmarksFromStorage,
+  saveNoteForEvidence,
+  loadNoteForEvidence,
+  loadNotesFromStorage,
+  loadNoteAsync,
+  readHypothesisFromStorage,
+  STORAGE_KEY_HYPOTHESIS
+} from "./storage/storage.js";
 
 // ---------------------------------------------------------------------
 // LOCAL STATE
@@ -11,10 +21,6 @@ var currentPeopleTab = "people";
 var loadingStepsRemaining = 2;
 var evidenceViewLoading = true;
 var modalCloseListenerCount = 0;
-
-var STORAGE_KEY_BOOKMARKS = "remotion_bookmarks";
-var STORAGE_KEY_NOTES = "remotion_notes";
-var STORAGE_KEY_HYPOTHESIS = "remotion_hypothesis";
 
 // ---------------------------------------------------------------------
 // DATA LOADING
@@ -888,10 +894,8 @@ function getSelectedOptions(selectEl) {
 }
 
 function loadHypothesisFromStorage() {
-  var raw = localStorage.getItem(STORAGE_KEY_HYPOTHESIS);
-  if (!raw) return;
-
-  var draft = JSON.parse(raw); 
+  var draft = readHypothesisFromStorage();
+  if (draft === undefined) return;
 
   document.getElementById("hypSuspect").value = draft.suspectId || "";
   document.getElementById("hypNature").value = draft.nature || "";
@@ -905,50 +909,6 @@ function loadHypothesisFromStorage() {
   for (var i = 0; i < evidenceSelect.options.length; i++) {
     evidenceSelect.options[i].selected = savedIds.indexOf(evidenceSelect.options[i].value) !== -1;
   }
-}
-
-// ---------------------------------------------------------------------
-// LOCAL STORAGE HELPERS (bookmarks & notes)
-// ---------------------------------------------------------------------
-
-function saveBookmarksToStorage() {
-  localStorage.setItem(STORAGE_KEY_BOOKMARKS, JSON.stringify(state.bookmarks));
-}
-
-function loadBookmarksFromStorage() {
-  try {
-    var raw = localStorage.getItem(STORAGE_KEY_BOOKMARKS);
-    var parsed = raw ? JSON.parse(raw) : [];
-    state.bookmarks = Array.isArray(parsed) ? parsed : [];
-  } catch (err) {
-    console.warn("Could not read stored bookmarks, starting empty", err);
-    state.bookmarks = [];
-  }
-}
-
-function saveNoteForEvidence(evidenceId, text) {
-  state.notesStore[evidenceId] = text;
-  localStorage.setItem(STORAGE_KEY_NOTES, JSON.stringify(state.notesStore));
-}
-
-function loadNoteForEvidence(evidenceId) {
-  return state.notesStore[evidenceId] || "";
-}
-
-function loadNotesFromStorage() {
-  var raw = localStorage.getItem(STORAGE_KEY_NOTES);
-  if (!raw) {
-    state.notesStore = {};
-    return;
-  }
-
-  state.notesStore = JSON.parse(raw);
-}
-
-function loadNoteAsync(evidenceId) {
-  return new Promise(function (resolve) {
-    resolve(state.notesStore[evidenceId] || "");
-  });
 }
 
 // ---------------------------------------------------------------------
