@@ -1,34 +1,14 @@
-// ---------------------------------------------------------------------
-// GLOBAL STATE
-// ---------------------------------------------------------------------
-var allEvidence = [];
-var filteredEvidence = [];
-var selectedEvidence = null;
-var bookmarks = [];
-var currentPage = "dashboard";
+import state from "./state/state.js";
 
-var allPeople = [];
-var allLocations = [];
-var allTimeline = [];
-var caseData = {};
-
+// ---------------------------------------------------------------------
+// LOCAL STATE
+// The shared stuff moved into state.js. What's left here is state that
+// only this file reads or writes, so there's no reason to share it yet.
+// ---------------------------------------------------------------------
 var currentPeopleTab = "people";
-var loadingStepsRemaining = 2; 
-
-
+var loadingStepsRemaining = 2;
 var evidenceViewLoading = true;
-
-
-var viewRendered = {
-  dashboard: false,
-  evidence: false,
-  people: false,
-  timeline: false,
-  workspace: false
-};
-
-var notesStore = {}; 
-var modalCloseListenerCount = 0; 
+var modalCloseListenerCount = 0;
 
 var STORAGE_KEY_BOOKMARKS = "remotion_bookmarks";
 var STORAGE_KEY_NOTES = "remotion_notes";
@@ -56,15 +36,15 @@ function hideLoadingStep() {
 function loadCorePeopleAndLocations() {
   return fetch("data/case.json").then(function (caseRes) {
     return caseRes.json().then(function (caseJson) {
-      caseData = caseJson;
+      state.caseData = caseJson;
 
       return fetch("data/people.json").then(function (peopleRes) {
         return peopleRes.json().then(function (peopleJson) {
-          allPeople = peopleJson;
+          state.allPeople = peopleJson;
 
           return fetch("data/locations.json").then(function (locationsRes) {
             return locationsRes.json().then(function (locationsJson) {
-              allLocations = locationsJson;
+              state.allLocations = locationsJson;
 
               hideLoadingStep();
               renderDashboard();
@@ -83,12 +63,12 @@ function loadEvidenceData() {
       return res.json();
     })
     .then(function (data) {
-      allEvidence = data;
+      state.allEvidence = data;
       applyStoredBookmarkFlags();
-      filteredEvidence = allEvidence; 
+      state.filteredEvidence = state.allEvidence; 
       renderDashboard();
       populateAllDropdowns();
-      if (currentPage === "evidence") renderEvidenceList();
+      if (state.currentPage === "evidence") renderEvidenceList();
     })
     .catch(function (err) {
       console.error("Failed to load evidence.json", err);
@@ -102,9 +82,9 @@ function loadTimelineData() {
       return res.json();
     })
     .then(function (data) {
-      allTimeline = data;
+      state.allTimeline = data;
       renderDashboard();
-      if (currentPage === "timeline") renderTimeline();
+      if (state.currentPage === "timeline") renderTimeline();
       populateAllDropdowns();
     })
     .catch(function (err) {
@@ -129,22 +109,22 @@ function loadAllData() {
 // ---------------------------------------------------------------------
 
 function findEvidenceById(id) {
-  for (var i = 0; i < allEvidence.length; i++) {
-    if (allEvidence[i].id === id) return allEvidence[i];
+  for (var i = 0; i < state.allEvidence.length; i++) {
+    if (state.allEvidence[i].id === id) return state.allEvidence[i];
   }
   return null;
 }
 
 function findPersonById(id) {
-  for (var i = 0; i < allPeople.length; i++) {
-    if (allPeople[i].id === id) return allPeople[i];
+  for (var i = 0; i < state.allPeople.length; i++) {
+    if (state.allPeople[i].id === id) return state.allPeople[i];
   }
   return null;
 }
 
 function findLocationById(id) {
-  for (var i = 0; i < allLocations.length; i++) {
-    if (allLocations[i].id === id) return allLocations[i];
+  for (var i = 0; i < state.allLocations.length; i++) {
+    if (state.allLocations[i].id === id) return state.allLocations[i];
   }
   return null;
 }
@@ -190,7 +170,7 @@ function handleHashChange() {
   if (validViews.indexOf(hash) === -1) {
     hash = "dashboard";
   }
-  currentPage = hash;
+  state.currentPage = hash;
 
   var sections = document.querySelectorAll(".view");
   for (var i = 0; i < sections.length; i++) {
@@ -206,19 +186,19 @@ function handleHashChange() {
     }
   }
 
-  if (hash === "dashboard" && !viewRendered.dashboard) {
+  if (hash === "dashboard" && !state.viewRendered.dashboard) {
     renderDashboard();
-    viewRendered.dashboard = true;
-  } else if (hash === "evidence" && !viewRendered.evidence) {
+    state.viewRendered.dashboard = true;
+  } else if (hash === "evidence" && !state.viewRendered.evidence) {
     renderEvidenceList();
-    viewRendered.evidence = true;
-  } else if (hash === "people" && !viewRendered.people) {
+    state.viewRendered.evidence = true;
+  } else if (hash === "people" && !state.viewRendered.people) {
     renderPeople();
     renderLocations();
-    viewRendered.people = true;
-  } else if (hash === "timeline" && !viewRendered.timeline) {
+    state.viewRendered.people = true;
+  } else if (hash === "timeline" && !state.viewRendered.timeline) {
     renderTimeline();
-    viewRendered.timeline = true;
+    state.viewRendered.timeline = true;
   } else if (hash === "workspace") {
     // workspace is cheap enough that it always re-renders
     renderWorkspace();
@@ -234,24 +214,24 @@ function renderDashboard() {
   if (!container) return;
 
   var reviewedCount = 0;
-  for (var i = 0; i < allEvidence.length; i++) {
-    if ((allEvidence[i].status || "").toLowerCase() === "reviewed") reviewedCount++;
+  for (var i = 0; i < state.allEvidence.length; i++) {
+    if ((state.allEvidence[i].status || "").toLowerCase() === "reviewed") reviewedCount++;
   }
 
-  var progressPct = allEvidence.length === 0 ? 0 : Math.round((reviewedCount / allEvidence.length) * 100);
+  var progressPct = state.allEvidence.length === 0 ? 0 : Math.round((reviewedCount / state.allEvidence.length) * 100);
 
   var html = "";
   html += '<div class="case-summary-card">';
-  html += "<h3>" + (caseData.title || "Case") + "</h3>";
-  html += '<p><span class="badge badge-flagged">' + (caseData.status || "unknown").toUpperCase() + "</span></p>";
-  html += "<p>" + (caseData.summary || "") + "</p>";
+  html += "<h3>" + (state.caseData.title || "Case") + "</h3>";
+  html += '<p><span class="badge badge-flagged">' + (state.caseData.status || "unknown").toUpperCase() + "</span></p>";
+  html += "<p>" + (state.caseData.summary || "") + "</p>";
   html += "</div>";
 
   html += '<div class="stat-grid">';
-  html += statCardHTML(allEvidence.length, "Evidence items");
-  html += statCardHTML(allPeople.length, "People");
-  html += statCardHTML(allLocations.length, "Locations");
-  html += statCardHTML(bookmarks.length, "Bookmarked");
+  html += statCardHTML(state.allEvidence.length, "Evidence items");
+  html += statCardHTML(state.allPeople.length, "People");
+  html += statCardHTML(state.allLocations.length, "Locations");
+  html += statCardHTML(state.bookmarks.length, "Bookmarked");
   html += statCardHTML(reviewedCount, "Reviewed");
   html += "</div>";
 
@@ -264,7 +244,7 @@ function renderDashboard() {
   html += '<div class="dashboard-columns">';
 
   html += '<div class="dashboard-panel"><h3>Recent evidence</h3>';
-  var recentEvidence = allEvidence.slice(-5).reverse();
+  var recentEvidence = state.allEvidence.slice(-5).reverse();
   if (recentEvidence.length === 0) {
     html += "<p>No evidence loaded yet.</p>";
   }
@@ -276,7 +256,7 @@ function renderDashboard() {
   html += "</div>";
 
   html += '<div class="dashboard-panel"><h3>Recent timeline events</h3>';
-  var recentTimeline = allTimeline.slice(-5).reverse();
+  var recentTimeline = state.allTimeline.slice(-5).reverse();
   if (recentTimeline.length === 0) {
     html += "<p>No timeline events loaded yet.</p>";
   }
@@ -312,8 +292,8 @@ function populateEvidenceDropdowns() {
   if (!typeSelect || !personSelect || !locationSelect) return;
 
   var types = [];
-  for (var i = 0; i < allEvidence.length; i++) {
-    var t = allEvidence[i].type.toLowerCase();
+  for (var i = 0; i < state.allEvidence.length; i++) {
+    var t = state.allEvidence[i].type.toLowerCase();
     if (types.indexOf(t) === -1) types.push(t);
   }
   typeSelect.innerHTML = '<option value="">All types</option>';
@@ -322,13 +302,13 @@ function populateEvidenceDropdowns() {
   }
 
   personSelect.innerHTML = '<option value="">All people</option>';
-  for (var p = 0; p < allPeople.length; p++) {
-    personSelect.innerHTML += '<option value="' + allPeople[p].id + '">' + allPeople[p].name + "</option>";
+  for (var p = 0; p < state.allPeople.length; p++) {
+    personSelect.innerHTML += '<option value="' + state.allPeople[p].id + '">' + state.allPeople[p].name + "</option>";
   }
 
   locationSelect.innerHTML = '<option value="">All locations</option>';
-  for (var l = 0; l < allLocations.length; l++) {
-    locationSelect.innerHTML += '<option value="' + allLocations[l].id + '">' + allLocations[l].id + " - " + allLocations[l].name + "</option>";
+  for (var l = 0; l < state.allLocations.length; l++) {
+    locationSelect.innerHTML += '<option value="' + state.allLocations[l].id + '">' + state.allLocations[l].id + " - " + state.allLocations[l].name + "</option>";
   }
 }
 
@@ -342,8 +322,8 @@ function getFilteredEvidence() {
   var relevanceVal = document.getElementById("filterRelevance").value;
 
   var results = [];
-  for (var i = 0; i < allEvidence.length; i++) {
-    var item = allEvidence[i];
+  for (var i = 0; i < state.allEvidence.length; i++) {
+    var item = state.allEvidence[i];
     var matches = true;
 
     if (searchTerm) {
@@ -362,7 +342,7 @@ function getFilteredEvidence() {
     if (matches) results.push(item);
   }
 
-  filteredEvidence = results;
+  state.filteredEvidence = results;
   return results;
 }
 
@@ -395,7 +375,7 @@ function renderEvidenceList() {
 
 
 function renderEvidenceCardHTML(ev) {
-  var isBookmarked = bookmarks.indexOf(ev.id) !== -1;
+  var isBookmarked = state.bookmarks.indexOf(ev.id) !== -1;
   var html = '<div class="evidence-card" data-id="' + ev.id + '">';
   html += '<button class="bookmark-btn ' + (isBookmarked ? "active" : "") + '" data-action="bookmark" data-id="' + ev.id + '" aria-label="Toggle bookmark for ' + ev.title + '"><span class="bookmark-icon">' + (isBookmarked ? "★" : "☆") + "</span></button>";
   html += "<h3>" + ev.title + "</h3>";
@@ -435,22 +415,22 @@ function handleBookmarkClick(evidenceId) {
   var ev = findEvidenceById(evidenceId);
   if (!ev) return;
 
-  if (bookmarks.indexOf(evidenceId) === -1) {
-    bookmarks.push(evidenceId);
+  if (state.bookmarks.indexOf(evidenceId) === -1) {
+    state.bookmarks.push(evidenceId);
     ev.bookmarked = true;
   } else {
-    bookmarks = bookmarks.filter(function (id) {
+    state.bookmarks = state.bookmarks.filter(function (id) {
       return id !== evidenceId;
     });
     ev.bookmarked = false;
   }
   saveBookmarksToStorage();
-  if (currentPage === "evidence") renderEvidenceList();
+  if (state.currentPage === "evidence") renderEvidenceList();
 }
 
 function applyStoredBookmarkFlags() {
-  for (var i = 0; i < allEvidence.length; i++) {
-    allEvidence[i].bookmarked = bookmarks.indexOf(allEvidence[i].id) !== -1;
+  for (var i = 0; i < state.allEvidence.length; i++) {
+    state.allEvidence[i].bookmarked = state.bookmarks.indexOf(state.allEvidence[i].id) !== -1;
   }
 }
 
@@ -458,19 +438,19 @@ function handleSortChange() {
   var sortValue = document.getElementById("sortEvidence").value;
 
   if (sortValue === "title-asc") {
-    filteredEvidence.sort(function (a, b) {
+    state.filteredEvidence.sort(function (a, b) {
       return a.title.localeCompare(b.title);
     });
   } else if (sortValue === "title-desc") {
-    filteredEvidence.sort(function (a, b) {
+    state.filteredEvidence.sort(function (a, b) {
       return b.title.localeCompare(a.title);
     });
   } else if (sortValue === "date-asc") {
-    filteredEvidence.sort(function (a, b) {
+    state.filteredEvidence.sort(function (a, b) {
       return new Date(a.timestamp) - new Date(b.timestamp);
     });
   } else {
-    filteredEvidence.sort(function (a, b) {
+    state.filteredEvidence.sort(function (a, b) {
       return new Date(b.timestamp) - new Date(a.timestamp);
     });
   }
@@ -515,7 +495,7 @@ function handleSearchInput(event) {
 function openEvidenceDetail(evidenceId) {
   var ev = findEvidenceById(evidenceId);
   if (!ev) return;
-  selectedEvidence = ev;
+  state.selectedEvidence = ev;
 
   var section = document.getElementById("evidenceDetailSection");
   section.classList.remove("hidden");
@@ -528,7 +508,7 @@ function closeEvidenceDetail() {
   var section = document.getElementById("evidenceDetailSection");
   section.classList.add("hidden");
   section.innerHTML = "";
-  selectedEvidence = null;
+  state.selectedEvidence = null;
 }
 
 function renderEvidenceDetail(ev) {
@@ -596,12 +576,12 @@ function renderEvidenceDetail(ev) {
   document.getElementById("detailStatusSelect").addEventListener("change", function (e) {
     ev.status = e.target.value; // direct mutation of the loaded evidence object
     renderEvidenceDetail(ev);
-    if (viewRendered.evidence) renderEvidenceList();
+    if (state.viewRendered.evidence) renderEvidenceList();
   });
   document.getElementById("detailRelevanceSelect").addEventListener("change", function (e) {
     ev.relevance = e.target.value;
     renderEvidenceDetail(ev);
-    if (viewRendered.evidence) renderEvidenceList();
+    if (state.viewRendered.evidence) renderEvidenceList();
   });
 }
 
@@ -647,8 +627,8 @@ function switchPeopleTab(tab) {
 
 function countEvidenceForPerson(person) {
   var count = 0;
-  for (var i = 0; i < allEvidence.length; i++) {
-    if (evidenceMentionsPerson(allEvidence[i], person)) count++;
+  for (var i = 0; i < state.allEvidence.length; i++) {
+    if (evidenceMentionsPerson(state.allEvidence[i], person)) count++;
   }
   return count;
 }
@@ -656,8 +636,8 @@ function countEvidenceForPerson(person) {
 function renderPeople() {
   var container = document.getElementById("peoplePanel");
   var html = "";
-  for (var i = 0; i < allPeople.length; i++) {
-    var person = allPeople[i];
+  for (var i = 0; i < state.allPeople.length; i++) {
+    var person = state.allPeople[i];
     var count = countEvidenceForPerson(person);
 
     html += '<div class="person-card">';
@@ -694,8 +674,8 @@ function renderPeople() {
 function renderLocations() {
   var container = document.getElementById("locationsPanel");
   var html = "";
-  for (var i = 0; i < allLocations.length; i++) {
-    var loc = allLocations[i];
+  for (var i = 0; i < state.allLocations.length; i++) {
+    var loc = state.allLocations[i];
     html += '<div class="location-card">';
     html += "<h3>" + loc.id + " &mdash; " + loc.name + "</h3>";
     html += "<p>" + loc.description + "</p>";
@@ -719,18 +699,18 @@ function populateTimelineDropdowns() {
   if (!personSelect || !locationSelect || !typeSelect) return;
 
   personSelect.innerHTML = '<option value="">All people</option>';
-  for (var p = 0; p < allPeople.length; p++) {
-    personSelect.innerHTML += '<option value="' + allPeople[p].id + '">' + allPeople[p].name + "</option>";
+  for (var p = 0; p < state.allPeople.length; p++) {
+    personSelect.innerHTML += '<option value="' + state.allPeople[p].id + '">' + state.allPeople[p].name + "</option>";
   }
 
   locationSelect.innerHTML = '<option value="">All locations</option>';
-  for (var l = 0; l < allLocations.length; l++) {
-    locationSelect.innerHTML += '<option value="' + allLocations[l].id + '">' + allLocations[l].id + "</option>";
+  for (var l = 0; l < state.allLocations.length; l++) {
+    locationSelect.innerHTML += '<option value="' + state.allLocations[l].id + '">' + state.allLocations[l].id + "</option>";
   }
 
   var types = [];
-  for (var i = 0; i < allTimeline.length; i++) {
-    if (types.indexOf(allTimeline[i].type) === -1) types.push(allTimeline[i].type);
+  for (var i = 0; i < state.allTimeline.length; i++) {
+    if (types.indexOf(state.allTimeline[i].type) === -1) types.push(state.allTimeline[i].type);
   }
   typeSelect.innerHTML = '<option value="">All event types</option>';
   for (var t = 0; t < types.length; t++) {
@@ -748,8 +728,8 @@ function renderTimeline() {
   var typeFilter = document.getElementById("timelineTypeFilter").value;
 
   var events = [];
-  for (var i = 0; i < allTimeline.length; i++) {
-    var evt = allTimeline[i];
+  for (var i = 0; i < state.allTimeline.length; i++) {
+    var evt = state.allTimeline[i];
     if (personFilter && evt.personIds.indexOf(personFilter) === -1) continue;
     if (locationFilter && evt.locationIds.indexOf(locationFilter) === -1) continue;
     if (typeFilter && evt.type !== typeFilter) continue;
@@ -856,7 +836,7 @@ function renderBookmarksList() {
   var container = document.getElementById("bookmarksList");
   if (!container) return;
 
-  var bookmarkedItems = allEvidence.filter(function (ev) {
+  var bookmarkedItems = state.allEvidence.filter(function (ev) {
     return ev.bookmarked;
   });
 
@@ -890,10 +870,10 @@ function renderNotesList() {
   if (!container) return;
 
   var noteEntries = [];
-  for (var i = 0; i < allEvidence.length; i++) {
-    var note = notesStore[allEvidence[i].id];
+  for (var i = 0; i < state.allEvidence.length; i++) {
+    var note = state.notesStore[state.allEvidence[i].id];
     if (note) {
-      noteEntries.push({ index: i, evidenceId: allEvidence[i].id, title: allEvidence[i].title, text: note });
+      noteEntries.push({ index: i, evidenceId: state.allEvidence[i].id, title: state.allEvidence[i].title, text: note });
     }
   }
 
@@ -918,14 +898,14 @@ function populateHypothesisDropdowns() {
 
   var currentSuspect = suspectSelect.value;
   suspectSelect.innerHTML = '<option value="">Select a person…</option>';
-  for (var p = 0; p < allPeople.length; p++) {
-    suspectSelect.innerHTML += '<option value="' + allPeople[p].id + '">' + allPeople[p].name + "</option>";
+  for (var p = 0; p < state.allPeople.length; p++) {
+    suspectSelect.innerHTML += '<option value="' + state.allPeople[p].id + '">' + state.allPeople[p].name + "</option>";
   }
   suspectSelect.value = currentSuspect;
 
   evidenceSelect.innerHTML = "";
-  for (var i = 0; i < allEvidence.length; i++) {
-    evidenceSelect.innerHTML += '<option value="' + allEvidence[i].id + '">' + allEvidence[i].id + " - " + allEvidence[i].title + "</option>";
+  for (var i = 0; i < state.allEvidence.length; i++) {
+    evidenceSelect.innerHTML += '<option value="' + state.allEvidence[i].id + '">' + state.allEvidence[i].id + " - " + state.allEvidence[i].title + "</option>";
   }
 }
 
@@ -988,42 +968,42 @@ function loadHypothesisFromStorage() {
 // ---------------------------------------------------------------------
 
 function saveBookmarksToStorage() {
-  localStorage.setItem(STORAGE_KEY_BOOKMARKS, JSON.stringify(bookmarks));
+  localStorage.setItem(STORAGE_KEY_BOOKMARKS, JSON.stringify(state.bookmarks));
 }
 
 function loadBookmarksFromStorage() {
   try {
     var raw = localStorage.getItem(STORAGE_KEY_BOOKMARKS);
     var parsed = raw ? JSON.parse(raw) : [];
-    bookmarks = Array.isArray(parsed) ? parsed : [];
+    state.bookmarks = Array.isArray(parsed) ? parsed : [];
   } catch (err) {
     console.warn("Could not read stored bookmarks, starting empty", err);
-    bookmarks = [];
+    state.bookmarks = [];
   }
 }
 
 function saveNoteForEvidence(evidenceId, text) {
-  notesStore[evidenceId] = text;
-  localStorage.setItem(STORAGE_KEY_NOTES, JSON.stringify(notesStore));
+  state.notesStore[evidenceId] = text;
+  localStorage.setItem(STORAGE_KEY_NOTES, JSON.stringify(state.notesStore));
 }
 
 function loadNoteForEvidence(evidenceId) {
-  return notesStore[evidenceId] || "";
+  return state.notesStore[evidenceId] || "";
 }
 
 function loadNotesFromStorage() {
   var raw = localStorage.getItem(STORAGE_KEY_NOTES);
   if (!raw) {
-    notesStore = {};
+    state.notesStore = {};
     return;
   }
 
-  notesStore = JSON.parse(raw);
+  state.notesStore = JSON.parse(raw);
 }
 
 function loadNoteAsync(evidenceId) {
   return new Promise(function (resolve) {
-    resolve(notesStore[evidenceId] || "");
+    resolve(state.notesStore[evidenceId] || "");
   });
 }
 
