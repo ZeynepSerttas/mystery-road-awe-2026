@@ -1083,3 +1083,15 @@ function initApp() {
 
 window.addEventListener("DOMContentLoaded", initApp);
 window.addEventListener("hashchange", handleHashChange);
+
+// These functions get put on window because index.html still calls them
+// directly from onclick attributes and modules don't expose functions
+// globally like the old plain script did.
+
+window.navigateTo = navigateTo;
+window.handleSortChange = handleSortChange;
+window.switchPeopleTab = switchPeopleTab;
+window.saveHypothesis = saveHypothesis;
+window.closeEvidenceDetail = closeEvidenceDetail;
+window.saveCurrentNote = saveCurrentNote;
+window.renderEvidenceList = renderEvidenceList;
