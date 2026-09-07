@@ -1,117 +1,19 @@
 import state from "./state/state.js";
 import { loadBookmarksFromStorage, loadNotesFromStorage, loadNoteAsync } from "./storage/storage.js";
+import { loadAllData } from "./data/data.js";
 import { navigateTo } from "./navigation/navigation.js";
 import { renderDashboard } from "./views/dashboard.js";
 import { switchPeopleTab, renderPeople, renderLocations } from "./views/people.js";
-import { populateTimelineDropdowns, renderTimeline } from "./views/timeline.js";
-import { renderWorkspace, populateHypothesisDropdowns, saveHypothesis } from "./views/workspace.js";
+import { renderTimeline } from "./views/timeline.js";
+import { renderWorkspace, saveHypothesis } from "./views/workspace.js";
 import {
-  populateEvidenceDropdowns,
   renderEvidenceList,
-  applyStoredBookmarkFlags,
   handleSortChange,
   clearFilters,
   handleSearchInput,
   closeEvidenceDetail,
   saveCurrentNote
 } from "./views/evidence.js";
-
-// ---------------------------------------------------------------------
-// LOCAL STATE
-// The shared stuff moved into state.js. What's left here is state that
-// only this file reads or writes, so there's no reason to share it yet.
-// ---------------------------------------------------------------------
-var loadingStepsRemaining = 2;
-
-// ---------------------------------------------------------------------
-// DATA LOADING
-// ---------------------------------------------------------------------
-
-function showLoadingOverlay(msg) {
-  var overlay = document.getElementById("loadingOverlay");
-  var text = document.getElementById("loadingText");
-  if (text) text.textContent = msg;
-  if (overlay) overlay.classList.remove("hidden");
-}
-
-function hideLoadingStep() {
-  loadingStepsRemaining--;
-  if (loadingStepsRemaining <= 0) {
-    var overlay = document.getElementById("loadingOverlay");
-    if (overlay) overlay.classList.add("hidden");
-  }
-}
-
-function loadCorePeopleAndLocations() {
-  return fetch("data/case.json").then(function (caseRes) {
-    return caseRes.json().then(function (caseJson) {
-      state.caseData = caseJson;
-
-      return fetch("data/people.json").then(function (peopleRes) {
-        return peopleRes.json().then(function (peopleJson) {
-          state.allPeople = peopleJson;
-
-          return fetch("data/locations.json").then(function (locationsRes) {
-            return locationsRes.json().then(function (locationsJson) {
-              state.allLocations = locationsJson;
-
-              hideLoadingStep();
-              renderDashboard();
-              populateAllDropdowns();
-            });
-          });
-        });
-      });
-    });
-  });
-}
-
-function loadEvidenceData() {
-  fetch("data/evidence.json")
-    .then(function (res) {
-      return res.json();
-    })
-    .then(function (data) {
-      state.allEvidence = data;
-      applyStoredBookmarkFlags();
-      state.filteredEvidence = state.allEvidence; 
-      renderDashboard();
-      populateAllDropdowns();
-      if (state.currentPage === "evidence") renderEvidenceList();
-    })
-    .catch(function (err) {
-      console.error("Failed to load evidence.json", err);
-      alert("Evidence could not be loaded. Some views may be incomplete.");
-    });
-}
-
-function loadTimelineData() {
-  return fetch("data/timeline.json")
-    .then(function (res) {
-      return res.json();
-    })
-    .then(function (data) {
-      state.allTimeline = data;
-      renderDashboard();
-      if (state.currentPage === "timeline") renderTimeline();
-      populateAllDropdowns();
-    })
-    .catch(function (err) {
-      console.log("timeline load error", err);
-    })
-    .finally(function () {
-      hideLoadingStep();
-    });
-}
-
-function loadAllData() {
-  showLoadingOverlay("Loading case file…");
-  loadingStepsRemaining = 2;
-  return loadCorePeopleAndLocations().then(function () {
-    loadEvidenceData();
-    loadTimelineData();
-  });
-}
 
 // ---------------------------------------------------------------------
 // NAVIGATION / HASH ROUTING
@@ -158,16 +60,6 @@ function handleHashChange() {
     // workspace is cheap enough that it always re-renders
     renderWorkspace();
   }
-}
-
-// ---------------------------------------------------------------------
-// EVIDENCE CATALOGUE
-// ---------------------------------------------------------------------
-
-function populateAllDropdowns() {
-  populateEvidenceDropdowns();
-  populateTimelineDropdowns();
-  populateHypothesisDropdowns();
 }
 
 // ---------------------------------------------------------------------
