@@ -11,6 +11,7 @@ import {
   readHypothesisFromStorage,
   STORAGE_KEY_HYPOTHESIS
 } from "./storage/storage.js";
+import { navigateTo } from "./navigation/navigation.js";
 import { renderDashboard } from "./views/dashboard.js";
 import {
   populateEvidenceDropdowns,
@@ -125,12 +126,9 @@ function loadAllData() {
 
 // ---------------------------------------------------------------------
 // NAVIGATION / HASH ROUTING
+// navigateTo lives in navigation/navigation.js now; handleHashChange
+// follows in the navigation phase.
 // ---------------------------------------------------------------------
-
-function navigateTo(viewName) {
-  window.location.hash = viewName;
-  // handleHashChange() will pick this up via the hashchange listener
-}
 
 function handleHashChange() {
   var hash = window.location.hash.replace("#", "");
