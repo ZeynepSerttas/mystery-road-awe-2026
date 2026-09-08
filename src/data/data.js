@@ -5,7 +5,7 @@
 
 import state from "../state/state.js";
 import { renderDashboard } from "../views/dashboard.js";
-import { populateEvidenceDropdowns, renderEvidenceList, applyStoredBookmarkFlags } from "../views/evidence.js";
+import { populateEvidenceDropdowns, renderEvidenceList, applyStoredBookmarkFlags, markEvidenceLoaded } from "../views/evidence.js";
 import { populateTimelineDropdowns, renderTimeline } from "../views/timeline.js";
 import { populateHypothesisDropdowns } from "../views/workspace.js";
 
@@ -63,6 +63,7 @@ function loadEvidenceData() {
       state.allEvidence = data;
       applyStoredBookmarkFlags();
       state.filteredEvidence = state.allEvidence;
+      markEvidenceLoaded();
       renderDashboard();
       populateAllDropdowns();
       if (state.currentPage === "evidence") renderEvidenceList();

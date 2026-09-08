@@ -10,6 +10,12 @@ import { saveBookmarksToStorage, saveNoteForEvidence, loadNoteForEvidence } from
 var evidenceViewLoading = true;
 var latestSearchRequestId = 0;
 
+// Called once the evidence data has loaded so renderEvidenceList stops
+// bailing out at the loading check.
+export function markEvidenceLoaded() {
+  evidenceViewLoading = false;
+}
+
 export function populateEvidenceDropdowns() {
   var typeSelect = document.getElementById("filterType");
   var personSelect = document.getElementById("filterPerson");
