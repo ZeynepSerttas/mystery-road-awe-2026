@@ -7,9 +7,6 @@ import { formatDate, certaintyBadgeClass } from "../utils/format.js";
 import { navigateTo } from "../navigation/navigation.js";
 import { openEvidenceDetail } from "./evidence.js";
 
-// Only openEvidenceModal uses this, so it stays here.
-var modalCloseListenerCount = 0;
-
 export function populateTimelineDropdowns() {
   var personSelect = document.getElementById("timelinePersonFilter");
   var locationSelect = document.getElementById("timelineLocationFilter");
@@ -106,6 +103,21 @@ function openEvidenceModal(evidenceId) {
     modal = document.createElement("div");
     modal.id = "quickViewModal";
     document.body.appendChild(modal);
+
+    // Attach the click handler once, when the modal is first created.
+    // Doing it on every open stacked up a new listener each time.
+    modal.addEventListener("click", function (e) {
+      if (e.target.classList.contains("modal-close-btn") || e.target.classList.contains("modal-backdrop")) {
+        modal.innerHTML = "";
+      }
+      if (e.target.getAttribute && e.target.getAttribute("data-open-full")) {
+        modal.innerHTML = "";
+        navigateTo("evidence");
+        setTimeout(function () {
+          openEvidenceDetail(e.target.getAttribute("data-open-full"));
+        }, 0);
+      }
+    });
   }
 
   modal.innerHTML =
@@ -116,20 +128,4 @@ function openEvidenceModal(evidenceId) {
     "<p>" + ev.summary + "</p>" +
     '<button type="button" class="btn btn-primary btn-small" data-open-full="' + ev.id + '">Open full evidence</button>' +
     "</div></div>";
-
-  modalCloseListenerCount++;
-  console.log("modal opened, active close listeners:", modalCloseListenerCount);
-
-  modal.addEventListener("click", function (e) {
-    if (e.target.classList.contains("modal-close-btn") || e.target.classList.contains("modal-backdrop")) {
-      modal.innerHTML = "";
-    }
-    if (e.target.getAttribute && e.target.getAttribute("data-open-full")) {
-      modal.innerHTML = "";
-      navigateTo("evidence");
-      setTimeout(function () {
-        openEvidenceDetail(e.target.getAttribute("data-open-full"));
-      }, 0);
-    }
-  });
 }
