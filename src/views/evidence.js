@@ -27,20 +27,24 @@ export function populateEvidenceDropdowns() {
     const t = state.allEvidence[i].type.toLowerCase();
     if (types.indexOf(t) === -1) types.push(t);
   }
-  typeSelect.innerHTML = '<option value="">All types</option>';
+
+  let typeHtml = '<option value="">All types</option>';
   for (let ti = 0; ti < types.length; ti++) {
-    typeSelect.innerHTML += '<option value="' + types[ti] + '">' + types[ti] + "</option>";
+    typeHtml += '<option value="' + types[ti] + '">' + types[ti] + "</option>";
   }
+  typeSelect.innerHTML = typeHtml;
 
-  personSelect.innerHTML = '<option value="">All people</option>';
+  let personHtml = '<option value="">All people</option>';
   for (let p = 0; p < state.allPeople.length; p++) {
-    personSelect.innerHTML += '<option value="' + state.allPeople[p].id + '">' + state.allPeople[p].name + "</option>";
+    personHtml += '<option value="' + state.allPeople[p].id + '">' + state.allPeople[p].name + "</option>";
   }
+  personSelect.innerHTML = personHtml;
 
-  locationSelect.innerHTML = '<option value="">All locations</option>';
+  let locationHtml = '<option value="">All locations</option>';
   for (let l = 0; l < state.allLocations.length; l++) {
-    locationSelect.innerHTML += '<option value="' + state.allLocations[l].id + '">' + state.allLocations[l].id + " - " + state.allLocations[l].name + "</option>";
+    locationHtml += '<option value="' + state.allLocations[l].id + '">' + state.allLocations[l].id + " - " + state.allLocations[l].name + "</option>";
   }
+  locationSelect.innerHTML = locationHtml;
 }
 
 export function getFilteredEvidence() {
@@ -217,7 +221,7 @@ export function handleSearchInput(event) {
   const term = event.target.value;
   const requestId = ++latestSearchRequestId;
 
-  simulateAsyncSearch(term).then(function (resolvedTerm) {
+  simulateAsyncSearch(term).then(function () {
     // Only apply this response if nothing newer has been typed meanwhile.
     if (requestId !== latestSearchRequestId) return;
     renderEvidenceList();

@@ -13,24 +13,28 @@ export function populateTimelineDropdowns() {
   const typeSelect = document.getElementById("timelineTypeFilter");
   if (!personSelect || !locationSelect || !typeSelect) return;
 
-  personSelect.innerHTML = '<option value="">All people</option>';
+  let personHtml = '<option value="">All people</option>';
   for (let p = 0; p < state.allPeople.length; p++) {
-    personSelect.innerHTML += '<option value="' + state.allPeople[p].id + '">' + state.allPeople[p].name + "</option>";
+    personHtml += '<option value="' + state.allPeople[p].id + '">' + state.allPeople[p].name + "</option>";
   }
+  personSelect.innerHTML = personHtml;
 
-  locationSelect.innerHTML = '<option value="">All locations</option>';
+  let locationHtml = '<option value="">All locations</option>';
   for (let l = 0; l < state.allLocations.length; l++) {
-    locationSelect.innerHTML += '<option value="' + state.allLocations[l].id + '">' + state.allLocations[l].id + "</option>";
+    locationHtml += '<option value="' + state.allLocations[l].id + '">' + state.allLocations[l].id + "</option>";
   }
+  locationSelect.innerHTML = locationHtml;
 
   const types = [];
   for (let i = 0; i < state.allTimeline.length; i++) {
     if (types.indexOf(state.allTimeline[i].type) === -1) types.push(state.allTimeline[i].type);
   }
-  typeSelect.innerHTML = '<option value="">All event types</option>';
+
+  let typeHtml = '<option value="">All event types</option>';
   for (let t = 0; t < types.length; t++) {
-    typeSelect.innerHTML += '<option value="' + types[t] + '">' + types[t] + "</option>";
+    typeHtml += '<option value="' + types[t] + '">' + types[t] + "</option>";
   }
+  typeSelect.innerHTML = typeHtml;
 }
 
 export function renderTimeline() {

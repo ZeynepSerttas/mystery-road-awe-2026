@@ -79,16 +79,18 @@ export function populateHypothesisDropdowns() {
   if (!suspectSelect || !evidenceSelect) return;
 
   const currentSuspect = suspectSelect.value;
-  suspectSelect.innerHTML = '<option value="">Select a person…</option>';
+  let suspectHtml = '<option value="">Select a person…</option>';
   for (let p = 0; p < state.allPeople.length; p++) {
-    suspectSelect.innerHTML += '<option value="' + state.allPeople[p].id + '">' + state.allPeople[p].name + "</option>";
+    suspectHtml += '<option value="' + state.allPeople[p].id + '">' + state.allPeople[p].name + "</option>";
   }
+  suspectSelect.innerHTML = suspectHtml;
   suspectSelect.value = currentSuspect;
 
-  evidenceSelect.innerHTML = "";
+  let evidenceHtml = "";
   for (let i = 0; i < state.allEvidence.length; i++) {
-    evidenceSelect.innerHTML += '<option value="' + state.allEvidence[i].id + '">' + state.allEvidence[i].id + " - " + state.allEvidence[i].title + "</option>";
+    evidenceHtml += '<option value="' + state.allEvidence[i].id + '">' + state.allEvidence[i].id + " - " + state.allEvidence[i].title + "</option>";
   }
+  evidenceSelect.innerHTML = evidenceHtml;
 }
 
 export function saveHypothesis() {
