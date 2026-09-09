@@ -323,11 +323,11 @@ function renderEvidenceDetail(ev) {
   });
 }
 
-function statusOptionHTML(current, value, label) {
+const statusOptionHTML = (current, value, label) => {
   const currentLower = (current || "").toLowerCase();
   const selected = currentLower === value ? " selected" : "";
   return '<option value="' + value + '"' + selected + ">" + label + "</option>";
-}
+};
 
 export function saveCurrentNote() {
   const textarea = document.getElementById("evidenceNoteInput");
