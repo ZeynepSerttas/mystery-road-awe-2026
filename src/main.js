@@ -18,10 +18,10 @@ import {
 // ---------------------------------------------------------------------
 
 function setupEventListeners() {
-  var navButtons = document.querySelectorAll(".nav-btn");
-  for (var i = 0; i < navButtons.length; i++) {
+  const navButtons = document.querySelectorAll(".nav-btn");
+  for (let i = 0; i < navButtons.length; i++) {
     navButtons[i].addEventListener("click", function () {
-      var targetView = navButtons[i].getAttribute("data-view");
+      const targetView = navButtons[i].getAttribute("data-view");
       console.log("nav clicked:", targetView);
     });
   }

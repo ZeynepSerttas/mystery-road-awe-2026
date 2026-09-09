@@ -3,8 +3,8 @@
 
 import state from "../state/state.js";
 
-var STORAGE_KEY_BOOKMARKS = "remotion_bookmarks";
-var STORAGE_KEY_NOTES = "remotion_notes";
+const STORAGE_KEY_BOOKMARKS = "remotion_bookmarks";
+const STORAGE_KEY_NOTES = "remotion_notes";
 // saveHypothesis (in the workspace view) still writes with this key, so it
 // has to be exported.
 export const STORAGE_KEY_HYPOTHESIS = "remotion_hypothesis";
@@ -15,8 +15,8 @@ export function saveBookmarksToStorage() {
 
 export function loadBookmarksFromStorage() {
   try {
-    var raw = localStorage.getItem(STORAGE_KEY_BOOKMARKS);
-    var parsed = raw ? JSON.parse(raw) : [];
+    const raw = localStorage.getItem(STORAGE_KEY_BOOKMARKS);
+    const parsed = raw ? JSON.parse(raw) : [];
     state.bookmarks = Array.isArray(parsed) ? parsed : [];
   } catch (err) {
     console.warn("Could not read stored bookmarks, starting empty", err);
@@ -34,7 +34,7 @@ export function loadNoteForEvidence(evidenceId) {
 }
 
 export function loadNotesFromStorage() {
-  var raw = localStorage.getItem(STORAGE_KEY_NOTES);
+  const raw = localStorage.getItem(STORAGE_KEY_NOTES);
   if (!raw) {
     state.notesStore = {};
     return;
@@ -52,7 +52,7 @@ export function loadNoteAsync(evidenceId) {
 // Just the read + parse. Filling in the form fields with the result is the
 // workspace view's job, not this file's.
 export function readHypothesisFromStorage() {
-  var raw = localStorage.getItem(STORAGE_KEY_HYPOTHESIS);
+  const raw = localStorage.getItem(STORAGE_KEY_HYPOTHESIS);
   if (!raw) return undefined;
   return JSON.parse(raw);
 }

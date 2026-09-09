@@ -4,21 +4,21 @@
 import state from "../state/state.js";
 
 export function findEvidenceById(id) {
-  for (var i = 0; i < state.allEvidence.length; i++) {
+  for (let i = 0; i < state.allEvidence.length; i++) {
     if (state.allEvidence[i].id === id) return state.allEvidence[i];
   }
   return null;
 }
 
 export function findPersonById(id) {
-  for (var i = 0; i < state.allPeople.length; i++) {
+  for (let i = 0; i < state.allPeople.length; i++) {
     if (state.allPeople[i].id === id) return state.allPeople[i];
   }
   return null;
 }
 
 export function findLocationById(id) {
-  for (var i = 0; i < state.allLocations.length; i++) {
+  for (let i = 0; i < state.allLocations.length; i++) {
     if (state.allLocations[i].id === id) return state.allLocations[i];
   }
   return null;
