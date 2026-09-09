@@ -90,6 +90,7 @@ export function renderEvidenceList() {
   if (loadingIndicator) loadingIndicator.classList.add("hidden");
 
   var results = getFilteredEvidence();
+  sortEvidenceResults(results);
 
   var html = "";
   if (results.length === 0) {
@@ -165,26 +166,32 @@ export function applyStoredBookmarkFlags() {
   }
 }
 
-export function handleSortChange() {
+// Sorts the given array in place by whatever the sort dropdown is set to.
+// Called from renderEvidenceList on the freshly filtered results, so the
+// sort survives a re-render instead of being rebuilt away.
+function sortEvidenceResults(results) {
   var sortValue = document.getElementById("sortEvidence").value;
 
   if (sortValue === "title-asc") {
-    state.filteredEvidence.sort(function (a, b) {
+    results.sort(function (a, b) {
       return a.title.localeCompare(b.title);
     });
   } else if (sortValue === "title-desc") {
-    state.filteredEvidence.sort(function (a, b) {
+    results.sort(function (a, b) {
       return b.title.localeCompare(a.title);
     });
   } else if (sortValue === "date-asc") {
-    state.filteredEvidence.sort(function (a, b) {
+    results.sort(function (a, b) {
       return new Date(a.timestamp) - new Date(b.timestamp);
     });
   } else {
-    state.filteredEvidence.sort(function (a, b) {
+    results.sort(function (a, b) {
       return new Date(b.timestamp) - new Date(a.timestamp);
     });
   }
+}
+
+export function handleSortChange() {
   renderEvidenceList();
 }
 
