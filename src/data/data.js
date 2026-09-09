@@ -12,9 +12,6 @@ import { populateHypothesisDropdowns } from "../views/workspace.js";
 // Only the loaders touch this, so it stays here.
 let loadingStepsRemaining = 2;
 
-// This calls into three of the view modules. It's a deliberate small
-// shortcut - the alternative was some event-bus thing and that's overkill
-// for a demo.
 function populateAllDropdowns() {
   populateEvidenceDropdowns();
   populateTimelineDropdowns();
