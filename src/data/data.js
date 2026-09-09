@@ -62,7 +62,7 @@ function loadEvidenceData() {
     .then(function (data) {
       state.allEvidence = data;
       applyStoredBookmarkFlags();
-      state.filteredEvidence = state.allEvidence;
+      state.filteredEvidence = state.allEvidence.slice();
       markEvidenceLoaded();
       renderDashboard();
       populateAllDropdowns();
