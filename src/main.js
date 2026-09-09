@@ -18,8 +18,6 @@ import {
 // ---------------------------------------------------------------------
 
 function setupEventListeners() {
-  window.addEventListener("hashchange", handleHashChange);
-
   var navButtons = document.querySelectorAll(".nav-btn");
   for (var i = 0; i < navButtons.length; i++) {
     navButtons[i].addEventListener("click", function () {
@@ -35,7 +33,6 @@ function setupEventListeners() {
   document.getElementById("filterLocation").addEventListener("change", renderEvidenceList);
 
   document.getElementById("filterStatus").addEventListener("change", renderEvidenceList);
-  document.getElementById("filterStatus").setAttribute("onchange", "renderEvidenceList()");
 
   document.getElementById("filterRelevance").addEventListener("change", renderEvidenceList);
 
@@ -81,4 +78,3 @@ window.switchPeopleTab = switchPeopleTab;
 window.saveHypothesis = saveHypothesis;
 window.closeEvidenceDetail = closeEvidenceDetail;
 window.saveCurrentNote = saveCurrentNote;
-window.renderEvidenceList = renderEvidenceList;
