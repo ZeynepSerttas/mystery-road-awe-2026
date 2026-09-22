@@ -13,9 +13,15 @@ import {
 } from "../views/evidence.js";
 import { populateTimelineDropdowns, renderTimeline } from "../views/timeline.js";
 import { populateHypothesisDropdowns } from "../views/workspace.js";
+import type { CaseInfo, Person, Location, Evidence, TimelineEvent } from "../types.js";
 
 // Only the loaders touch this, so it stays here.
 let loadingStepsRemaining = 2;
+
+async function getJson<T>(url: string): Promise<T> {
+  const res = await fetch(url);
+  return res.json() as Promise<T>;
+}
 
 function populateAllDropdowns() {
   populateEvidenceDropdowns();
@@ -23,7 +29,7 @@ function populateAllDropdowns() {
   populateHypothesisDropdowns();
 }
 
-function showLoadingOverlay(msg) {
+function showLoadingOverlay(msg: string) {
   const overlay = document.getElementById("loadingOverlay");
   const text = document.getElementById("loadingText");
   if (text) text.textContent = msg;
@@ -39,17 +45,9 @@ function hideLoadingStep() {
 }
 
 async function loadCorePeopleAndLocations() {
-  const caseRes = await fetch("data/case.json");
-  const caseJson = await caseRes.json();
-  state.caseData = caseJson;
-
-  const peopleRes = await fetch("data/people.json");
-  const peopleJson = await peopleRes.json();
-  state.allPeople = peopleJson;
-
-  const locationsRes = await fetch("data/locations.json");
-  const locationsJson = await locationsRes.json();
-  state.allLocations = locationsJson;
+  state.caseData = await getJson<CaseInfo>("data/case.json");
+  state.allPeople = await getJson<Person[]>("data/people.json");
+  state.allLocations = await getJson<Location[]>("data/locations.json");
 
   hideLoadingStep();
   renderDashboard();
@@ -57,10 +55,7 @@ async function loadCorePeopleAndLocations() {
 }
 
 function loadEvidenceData() {
-  fetch("data/evidence.json")
-    .then(function (res) {
-      return res.json();
-    })
+  getJson<Evidence[]>("data/evidence.json")
     .then(function (data) {
       state.allEvidence = data;
       applyStoredBookmarkFlags();
@@ -78,9 +73,7 @@ function loadEvidenceData() {
 
 async function loadTimelineData() {
   try {
-    const res = await fetch("data/timeline.json");
-    const data = await res.json();
-    state.allTimeline = data;
+    state.allTimeline = await getJson<TimelineEvent[]>("data/timeline.json");
     renderDashboard();
     if (state.currentPage === "timeline") renderTimeline();
     populateAllDropdowns();
