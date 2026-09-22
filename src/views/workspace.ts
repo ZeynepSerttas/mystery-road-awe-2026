@@ -5,7 +5,11 @@
 import state from "../state/state.js";
 import { navigateTo } from "../navigation/navigation.js";
 import { openEvidenceDetail } from "./evidence.js";
-import { readHypothesisFromStorage, STORAGE_KEY_HYPOTHESIS } from "../storage/storage.js";
+import {
+  readHypothesisFromStorage,
+  STORAGE_KEY_HYPOTHESIS,
+  type HypothesisDraft,
+} from "../storage/storage.js";
 
 export function renderWorkspace() {
   renderBookmarksList();
@@ -46,19 +50,26 @@ function renderBookmarksList() {
   for (let b = 0; b < openButtons.length; b++) {
     openButtons[b].addEventListener("click", function (e) {
       navigateTo("evidence");
-      const id = e.target.getAttribute("data-open-evidence");
+      const id = (e.target as HTMLElement).getAttribute("data-open-evidence");
       setTimeout(function () {
-        openEvidenceDetail(id);
+        if (id) openEvidenceDetail(id);
       }, 0);
     });
   }
+}
+
+interface NoteEntry {
+  index: number;
+  evidenceId: string;
+  title: string;
+  text: string;
 }
 
 function renderNotesList() {
   const container = document.getElementById("notesList");
   if (!container) return;
 
-  const noteEntries = [];
+  const noteEntries: NoteEntry[] = [];
   for (let i = 0; i < state.allEvidence.length; i++) {
     const note = state.notesStore[state.allEvidence[i].id];
     if (note) {
@@ -90,8 +101,8 @@ function renderNotesList() {
 }
 
 export function populateHypothesisDropdowns() {
-  const suspectSelect = document.getElementById("hypSuspect");
-  const evidenceSelect = document.getElementById("hypEvidence");
+  const suspectSelect = document.getElementById("hypSuspect") as HTMLSelectElement | null;
+  const evidenceSelect = document.getElementById("hypEvidence") as HTMLSelectElement | null;
   if (!suspectSelect || !evidenceSelect) return;
 
   const currentSuspect = suspectSelect.value;
@@ -118,13 +129,13 @@ export function populateHypothesisDropdowns() {
 }
 
 export function saveHypothesis() {
-  const draft = {
-    suspectId: document.getElementById("hypSuspect").value,
-    nature: document.getElementById("hypNature").value,
-    evidenceIds: getSelectedOptions(document.getElementById("hypEvidence")),
-    confidence: document.getElementById("hypConfidence").value,
-    explanation: document.getElementById("hypExplanation").value,
-    alternative: document.getElementById("hypAlternative").value,
+  const draft: HypothesisDraft = {
+    suspectId: (document.getElementById("hypSuspect") as HTMLSelectElement).value,
+    nature: (document.getElementById("hypNature") as HTMLSelectElement).value,
+    evidenceIds: getSelectedOptions(document.getElementById("hypEvidence") as HTMLSelectElement),
+    confidence: (document.getElementById("hypConfidence") as HTMLInputElement).value,
+    explanation: (document.getElementById("hypExplanation") as HTMLTextAreaElement).value,
+    alternative: (document.getElementById("hypAlternative") as HTMLTextAreaElement).value,
     savedAt: new Date().toISOString(),
   };
 
@@ -136,15 +147,15 @@ export function saveHypothesis() {
     return;
   }
 
-  const msg = document.getElementById("hypothesisSavedMsg");
+  const msg = document.getElementById("hypothesisSavedMsg")!;
   msg.classList.remove("hidden");
   setTimeout(function () {
     msg.classList.add("hidden");
   }, 2000);
 }
 
-function getSelectedOptions(selectEl) {
-  const result = [];
+function getSelectedOptions(selectEl: HTMLSelectElement): string[] {
+  const result: string[] = [];
   for (let i = 0; i < selectEl.options.length; i++) {
     if (selectEl.options[i].selected) result.push(selectEl.options[i].value);
   }
@@ -157,14 +168,21 @@ function loadHypothesisFromStorage() {
   const draft = readHypothesisFromStorage();
   if (draft === undefined) return;
 
-  document.getElementById("hypSuspect").value = draft.suspectId || "";
-  document.getElementById("hypNature").value = draft.nature || "";
-  document.getElementById("hypConfidence").value = draft.confidence || 50;
-  document.getElementById("hypConfidenceValue").textContent = draft.confidence || 50;
-  document.getElementById("hypExplanation").value = draft.explanation || "";
-  document.getElementById("hypAlternative").value = draft.alternative || "";
+  (document.getElementById("hypSuspect") as HTMLSelectElement).value = draft.suspectId || "";
+  (document.getElementById("hypNature") as HTMLSelectElement).value = draft.nature || "";
+  // confidence is a string (see HypothesisDraft) - the fallback used to be
+  // the number 50, which happened to work at runtime (the DOM coerces it to
+  // "50" when assigned to .value/.textContent) but is a real type mismatch
+  // TS correctly flags. Using the string "50" is the same value, honestly
+  // typed.
+  (document.getElementById("hypConfidence") as HTMLInputElement).value = draft.confidence || "50";
+  document.getElementById("hypConfidenceValue")!.textContent = draft.confidence || "50";
+  (document.getElementById("hypExplanation") as HTMLTextAreaElement).value =
+    draft.explanation || "";
+  (document.getElementById("hypAlternative") as HTMLTextAreaElement).value =
+    draft.alternative || "";
 
-  const evidenceSelect = document.getElementById("hypEvidence");
+  const evidenceSelect = document.getElementById("hypEvidence") as HTMLSelectElement;
   const savedIds = draft.evidenceIds || [];
   for (let i = 0; i < evidenceSelect.options.length; i++) {
     evidenceSelect.options[i].selected = savedIds.indexOf(evidenceSelect.options[i].value) !== -1;

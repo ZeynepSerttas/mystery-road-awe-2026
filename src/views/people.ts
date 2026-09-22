@@ -6,12 +6,16 @@ import state from "../state/state.js";
 import { evidenceMentionsPerson } from "../utils/lookups.js";
 import { navigateTo } from "../navigation/navigation.js";
 import { renderEvidenceList } from "./evidence.js";
+import type { Person } from "../types.js";
 
-export function switchPeopleTab(tab) {
-  const peoplePanel = document.getElementById("peoplePanel");
-  const locationsPanel = document.getElementById("locationsPanel");
-  const peopleTabBtn = document.getElementById("tabPeopleBtn");
-  const locationsTabBtn = document.getElementById("tabLocationsBtn");
+export function switchPeopleTab(tab: "people" | "locations") {
+  // These 4 ids are static markup in index.html, not derived from user
+  // input like navigation.ts's "view-" + hash was, so a "!" assertion is
+  // the right call here rather than a null-check for each one.
+  const peoplePanel = document.getElementById("peoplePanel")!;
+  const locationsPanel = document.getElementById("locationsPanel")!;
+  const peopleTabBtn = document.getElementById("tabPeopleBtn")!;
+  const locationsTabBtn = document.getElementById("tabLocationsBtn")!;
 
   if (tab === "people") {
     peoplePanel.classList.remove("hidden");
@@ -26,7 +30,7 @@ export function switchPeopleTab(tab) {
   }
 }
 
-function countEvidenceForPerson(person) {
+function countEvidenceForPerson(person: Person) {
   let count = 0;
   for (let i = 0; i < state.allEvidence.length; i++) {
     if (evidenceMentionsPerson(state.allEvidence[i], person)) count++;
@@ -36,6 +40,7 @@ function countEvidenceForPerson(person) {
 
 export function renderPeople() {
   const container = document.getElementById("peoplePanel");
+  if (!container) return;
   let html = "";
   for (let i = 0; i < state.allPeople.length; i++) {
     const person = state.allPeople[i];
@@ -71,8 +76,12 @@ export function renderPeople() {
   const links = container.querySelectorAll(".evidence-count-link");
   for (let l = 0; l < links.length; l++) {
     links[l].addEventListener("click", function (e) {
-      const personId = e.target.getAttribute("data-person-id");
-      document.getElementById("filterPerson").value = personId;
+      // e.target is EventTarget | null in the DOM lib types - only Element
+      // actually has getAttribute, so this needs a cast. It's genuinely
+      // this click's target element, not a static id, so a cast (not a
+      // null-check) is the honest way to say "I know it's an Element here".
+      const personId = (e.target as HTMLElement).getAttribute("data-person-id") || "";
+      (document.getElementById("filterPerson") as HTMLSelectElement).value = personId;
       navigateTo("evidence");
       setTimeout(function () {
         renderEvidenceList();
@@ -83,6 +92,7 @@ export function renderPeople() {
 
 export function renderLocations() {
   const container = document.getElementById("locationsPanel");
+  if (!container) return;
   let html = "";
   for (let i = 0; i < state.allLocations.length; i++) {
     const loc = state.allLocations[i];

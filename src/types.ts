@@ -7,6 +7,8 @@ export type PersonId = string;
 export type LocationId = string;
 export type EvidenceId = string;
 
+export type ViewName = "dashboard" | "evidence" | "people" | "timeline" | "workspace";
+
 export interface CaseInfo {
   caseId: string;
   title: string;
@@ -59,6 +61,9 @@ export interface Evidence {
   // call site (see utils/format.ts).
   status: string;
   relevance: string;
+  // Not in the JSON - set at runtime by evidence.js from state.bookmarks
+  // once the data loads. Absent until then.
+  bookmarked?: boolean;
 }
 
 export interface TimelineEvent {

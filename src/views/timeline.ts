@@ -6,11 +6,14 @@ import { findEvidenceById, findLocationById } from "../utils/lookups.js";
 import { formatDate, certaintyBadgeClass } from "../utils/format.js";
 import { navigateTo } from "../navigation/navigation.js";
 import { openEvidenceDetail } from "./evidence.js";
+import type { TimelineEvent } from "../types.js";
 
 export function populateTimelineDropdowns() {
-  const personSelect = document.getElementById("timelinePersonFilter");
-  const locationSelect = document.getElementById("timelineLocationFilter");
-  const typeSelect = document.getElementById("timelineTypeFilter");
+  const personSelect = document.getElementById("timelinePersonFilter") as HTMLSelectElement | null;
+  const locationSelect = document.getElementById(
+    "timelineLocationFilter",
+  ) as HTMLSelectElement | null;
+  const typeSelect = document.getElementById("timelineTypeFilter") as HTMLSelectElement | null;
   if (!personSelect || !locationSelect || !typeSelect) return;
 
   let personHtml = '<option value="">All people</option>';
@@ -27,7 +30,7 @@ export function populateTimelineDropdowns() {
   }
   locationSelect.innerHTML = locationHtml;
 
-  const types = [];
+  const types: string[] = [];
   for (let i = 0; i < state.allTimeline.length; i++) {
     if (types.indexOf(state.allTimeline[i].type) === -1) types.push(state.allTimeline[i].type);
   }
@@ -43,12 +46,13 @@ export function renderTimeline() {
   const container = document.getElementById("timelineContainer");
   if (!container) return;
 
-  const order = document.getElementById("timelineOrder").value;
-  const personFilter = document.getElementById("timelinePersonFilter").value;
-  const locationFilter = document.getElementById("timelineLocationFilter").value;
-  const typeFilter = document.getElementById("timelineTypeFilter").value;
+  const order = (document.getElementById("timelineOrder") as HTMLSelectElement).value;
+  const personFilter = (document.getElementById("timelinePersonFilter") as HTMLSelectElement).value;
+  const locationFilter = (document.getElementById("timelineLocationFilter") as HTMLSelectElement)
+    .value;
+  const typeFilter = (document.getElementById("timelineTypeFilter") as HTMLSelectElement).value;
 
-  let events = [];
+  let events: TimelineEvent[] = [];
   for (let i = 0; i < state.allTimeline.length; i++) {
     const evt = state.allTimeline[i];
     if (personFilter && evt.personIds.indexOf(personFilter) === -1) continue;
@@ -58,7 +62,7 @@ export function renderTimeline() {
   }
 
   events = events.slice().sort(function (a, b) {
-    const diff = new Date(a.time) - new Date(b.time);
+    const diff = new Date(a.time).getTime() - new Date(b.time).getTime();
     return order === "desc" ? -diff : diff;
   });
 
@@ -104,7 +108,8 @@ export function renderTimeline() {
   const linkButtons = container.querySelectorAll(".evidence-link-btn");
   for (let b = 0; b < linkButtons.length; b++) {
     linkButtons[b].addEventListener("click", function (e) {
-      openEvidenceModal(e.target.getAttribute("data-evidence-id"));
+      const evidenceId = (e.target as HTMLElement).getAttribute("data-evidence-id");
+      if (evidenceId) openEvidenceModal(evidenceId);
     });
   }
 }
@@ -112,7 +117,7 @@ export function renderTimeline() {
 // --- Quick-view modal (used from the timeline) -------------------------
 // Stays here on purpose - the timeline is its only caller, so there's no
 // reason to give it its own module.
-function openEvidenceModal(evidenceId) {
+function openEvidenceModal(evidenceId: string) {
   const ev = findEvidenceById(evidenceId);
   if (!ev) return;
 
@@ -125,17 +130,24 @@ function openEvidenceModal(evidenceId) {
     // Attach the click handler once, when the modal is first created.
     // Doing it on every open stacked up a new listener each time.
     modal.addEventListener("click", function (e) {
+      // modal is captured from the enclosing scope by this callback; TS
+      // can't prove it's still non-null by the time this runs (it's a
+      // `let`, reassigned above), so it stays `HTMLElement | null` in
+      // here even though it demonstrably is one - hence modalEl.
+      const modalEl = modal as HTMLElement;
+      const target = e.target as HTMLElement;
       if (
-        e.target.classList.contains("modal-close-btn") ||
-        e.target.classList.contains("modal-backdrop")
+        target.classList.contains("modal-close-btn") ||
+        target.classList.contains("modal-backdrop")
       ) {
-        modal.innerHTML = "";
+        modalEl.innerHTML = "";
       }
-      if (e.target.getAttribute && e.target.getAttribute("data-open-full")) {
-        modal.innerHTML = "";
+      const openFullId = target.getAttribute("data-open-full");
+      if (openFullId) {
+        modalEl.innerHTML = "";
         navigateTo("evidence");
         setTimeout(function () {
-          openEvidenceDetail(e.target.getAttribute("data-open-full"));
+          openEvidenceDetail(openFullId);
         }, 0);
       }
     });

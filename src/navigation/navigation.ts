@@ -8,25 +8,31 @@ import { renderEvidenceList } from "../views/evidence.js";
 import { renderPeople, renderLocations } from "../views/people.js";
 import { renderTimeline } from "../views/timeline.js";
 import { renderWorkspace } from "../views/workspace.js";
+import type { ViewName } from "../types.js";
 
-export function navigateTo(viewName) {
+export function navigateTo(viewName: ViewName) {
   window.location.hash = viewName;
   // handleHashChange() will pick this up via the hashchange listener
 }
 
 export function handleHashChange() {
-  let hash = window.location.hash.replace("#", "");
-  const validViews = ["dashboard", "evidence", "people", "timeline", "workspace"];
-  if (validViews.indexOf(hash) === -1) {
-    hash = "dashboard";
-  }
+  const rawHash = window.location.hash.replace("#", "");
+  const validViews: ViewName[] = ["dashboard", "evidence", "people", "timeline", "workspace"];
+  const hash: ViewName = (validViews as string[]).includes(rawHash)
+    ? (rawHash as ViewName)
+    : "dashboard";
   state.currentPage = hash;
 
   const sections = document.querySelectorAll(".view");
   for (let i = 0; i < sections.length; i++) {
     sections[i].classList.remove("active");
   }
-  document.getElementById("view-" + hash).classList.add("active");
+  // getElementById can genuinely return null (typo, missing element), so
+  // unlike the static-id lookups elsewhere in this file this one gets a
+  // real check instead of a "!" assertion - the compiler was right to flag
+  // this, "view-" + hash isn't a literal the way "dashboardContent" is.
+  const targetSection = document.getElementById("view-" + hash);
+  if (targetSection) targetSection.classList.add("active");
 
   const navButtons = document.querySelectorAll(".nav-btn");
   for (let n = 0; n < navButtons.length; n++) {
