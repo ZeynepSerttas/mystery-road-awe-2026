@@ -308,6 +308,19 @@ public/assets/ (used git mv so the file history stays). since every path in
 the code was already relative, nothing else needed to change - those paths
 work exactly the same in dev and in the build.
 
+what public/ actually is: a special folder vite recognizes automatically -
+everything inside it gets copied unchanged into dist/ during a build, no
+bundling, no renaming, nothing. it didnt exist before this demo - data/ and
+assets/ used to just sit directly in the project's main folder since
+exercise 1. it got created specifically because of this demo's build step:
+vite build only auto-copies that one special folder, it ignores everything
+else at the top level. so json files and images arent javascript, vite
+shouldnt try to bundle them like code, it should just copy them over as-is
+- thats exactly why data/ and assets/ had to move there. i didnt have to
+create the public/ folder myself beforehand - the command used to move the
+files, git mv data public/data, creates the target folder automatically as
+part of moving things into it.
+
 added "build" and "preview" scripts. ran the build - vite turns the whole
 app into 3 files inside dist/: index.html, one js file with all the app
 logic bundled together, one css file with all the styles bundled together.
@@ -541,23 +554,467 @@ trusting them blindly.
 
 DEMO 6
 
-before writing any types i actually inspected all 5 json files in public/data/ with a script instead of guessing - dumped one sample record from each file, then checked all records in evidence.json and timeline.json for consistent keys and for the actual set of values each "enum-like" field takes (status, relevance, type, certainty). every file turned out to have exactly one consistent key shape (no optional fields to model), which was good news. but the value check surfaced something real: evidence.json's status field has both "unreviewed" and "Reviewed" (capital r), and relevance has both "unknown" and "Unknown" - inconsistent casing in the actual data. that mattered directly for how i typed those fields (see question 3 below).
+an interface (in typescript) describes what shape an object must have -
+which fields it needs, and what type each field is. its like a contract:
+"anything i call a Person must have an id field thats a string, a name
+field thats a string", and so on.
 
-wrote src/types.ts with interfaces for CaseInfo, Person, Location, Evidence, and TimelineEvent, matching the real json shapes exactly (field names/types taken from the actual sample records, not from what i assumed the app needed), plus PersonId/LocationId/EvidenceId as string aliases for readability at call sites.
+"typing the domain data" means: before this demo, only two small helper
+files had real types (demo 5). the actual data itself - evidence, people,
+locations, timeline, all the stuff coming from the json files - was still
+completely untyped. this demo gives that real data actual types.
 
-then picked the one genuinely ambiguous field, like the task asked: Evidence.personIds. before writing the CHANGES.md answer i actually checked what's really in there across all 18 evidence items (not just trusting my memory of the code) - and it's a real mix: most entries use the person's id ("patch-vector", "kernel-colt", "nova-byte", ...) but E04 specifically has "Nova Byte" (display name, capitalized, with a space) while E05 has "nova-byte" (the id) for that exact same person. confirmed against people.json: nova-byte's real id is "nova-byte", real name is "Nova Byte" - so E04 and E05 are both genuinely about her, just spelled two different ways. this is exactly why evidenceMentionsPerson (from demo 5) has to check both ev.personIds.indexOf(person.id) and ev.personIds.indexOf(person.name) - it's not defensive-programming paranoia, it's a real workaround for real inconsistent source data.
+before writing any types, i actually opened all 5 json files and looked at
+real records instead of guessing what they contain. this immediately
+surfaced two real inconsistencies in the data itself:
+1. evidence.json's status field has both "unreviewed" and "Reviewed"
+   (capital r) - inconsistent capitalization across different records
+2. Evidence.personIds sometimes holds a persons id ("nova-byte") and
+   sometimes their display name ("Nova Byte") for the exact same person
 
-converted src/data/data.ts (renamed from data.js) to actually use these types: added a small getJson<T>(url) helper (fetch + .json() cast to Promise<T>) so each loader gets a real typed result - state.allPeople = await getJson<Person[]>(...) instead of an untyped await res.json(). hit one real blocker doing this: state.js is still a plain .js file (state.js is demo 7's job, not this one), and typescript infers its empty array properties (allEvidence: [], allPeople: [], etc) as literally never[] since nothing in state.js itself ever pushes to them - so assigning a real Person[] into state.allPeople failed to typecheck. fixed it without touching or renaming state.js: added src/state/state.d.ts, a hand-written "shadow" declaration file next to it that just declares the real shape of the default export. typescript picks the .d.ts over inferring from the .js when both exist for the same module, so data.ts's typed loads now land somewhere real instead of silently widening back to any the moment they touch state. this file goes away once state.js is genuinely converted to state.ts in demo 7.
+wrote src/types.ts with interfaces for CaseInfo, Person, Location, Evidence,
+and TimelineEvent, matching the real json shapes exactly.
 
-also went back and updated lookups.ts (from demo 5) to import the real Evidence/Person/Location types from types.ts instead of the three narrow placeholder interfaces i wrote there last demo specifically as a stand-in for this - said i'd do this in the demo 5 commit message, so did it now instead of leaving it.
+converted data.js to data.ts, using these new types so each data-loading
+function returns real typed results instead of an untyped fetch().json().
+hit one real problem doing this: state.js is still a plain untyped .js file
+(thats demo 7's job), so typescript couldnt tell what shape its empty
+arrays (allPeople: [], allEvidence: [], etc) were supposed to hold. fixed
+this by adding state.d.ts - a small file that just describes state.js's
+shape by hand, without converting state.js itself yet. this file goes away
+once state.js becomes state.ts for real in demo 7.
 
-verified: npx tsc --noEmit clean, npm run build succeeds, npm run dev shows "[TypeScript] No errors" in the terminal, lint and format both still pass, and the same 5-view headless-browser check as every previous demo shows identical behavior with zero console errors - typing the data layer didn't change what the app does.
+how i tested this myself:
+1. opened public/data/evidence.json myself and looked directly at E04 and
+   E05 - saw with my own eyes that E04 uses "Nova Byte" (the display name)
+   and E05 uses "nova-byte" (the id), for what turns out to be the same
+   person (confirmed by checking people.json's real id/name pair for her)
+2. ran npm run typecheck - clean, no errors
+3. ran npm run dev, clicked through all 5 views again - same as before,
+   zero console errors
 
-q: walk through the ambiguous field - how did js get away without deciding on a shape, what did ts force you to commit to?
-plain js never has to decide what "should" be in an array, it just calls .indexOf() on whatever's actually there at runtime, so evidenceMentionsPerson checking both id and name "just worked" for every record without anyone ever noticing the inconsistency was there - the loose typing hid the bug in plain sight. giving personIds an actual type (PersonId[], i.e. string[] with intent) forces you to pick one meaning for what belongs in that array. i typed it as PersonId, committing to "this should always be an id" - which doesn't retroactively fix E04's data (ts has no way to validate the contents of a json file at compile time), but it does make the mismatch visible and documented instead of silently tolerated: the type now says one thing, evidenceMentionsPerson's dual .indexOf() check now visibly contradicts it, and i had to write a comment explaining why the "wrong" code is still there instead of just leaving it unremarked like the js version did.
+this is exactly why evidenceMentionsPerson (the function from demo 5) has
+to check both the id and the name against personIds - its not overly
+careful code, its a real workaround for real inconsistent data.
 
-q: is there a data-shape problem here ts's static types cant catch on their own, because the bad data only shows up at runtime from a json file, not your code? what else would you need?
-yes, and i hit a second one of these for real while inspecting the files: evidence.json's status field has both "unreviewed" and "Reviewed" (capital r) across different records, and relevance has both "unknown" and "Unknown". if id typed status as a strict union like "unreviewed" | "reviewed" | "flagged", that type would be a straight-up lie about several real evidence records the moment fetch().json() returns them - ts would never catch this, because res.json() returns Promise<any> and casting/annotating that result to a type is something ts trusts you on by construction, it doesnt inspect the actual bytes coming back over the network. thats exactly why i typed status/relevance as plain string instead of a strict union - a strict union here would have been type safety theater, claiming a guarantee the data doesnt keep. what youd actually need to catch this for real is runtime validation - something like zod or a manual shape-check function that runs against the real parsed json after fetch and either normalizes or rejects bad values, instead of trusting a compile-time-only type assertion.
+q: walk through the ambiguous field - how did js get away without deciding
+on a shape, what did typescript force you to decide?
+plain js never has to decide what "should" be in an array - it just checks
+whatever is actually there at runtime. so evidenceMentionsPerson checking
+both id and name just quietly worked for every record, and nobody ever had
+to notice the data itself was inconsistent. giving personIds an actual
+type forces me to pick one meaning - i typed it as "this should always be
+an id". that doesnt fix E04s data (typescript cant reach into a json file
+and fix its contents), but it makes the mismatch visible: now the type
+says one thing, and the code that checks both id and name visibly
+contradicts it, so i had to write a comment explaining why the "wrong"
+code is still there - the js version never had to explain anything.
 
-q: difference between an interface and a type alias for an object shape? which did you use, does it matter here?
-both can describe the same object shape and for the plain data records here (Person, Evidence, etc) they're functionally interchangeable - the practical differences (interfaces can be reopened/merged across declarations, type aliases can describe unions/primitives/mapped types that interfaces cant) don't come up for a flat "these fields, these types" record. i used interface for the 5 domain shapes (CaseInfo, Person, Location, Evidence, TimelineEvent) and type for the 3 id aliases (PersonId, LocationId, EvidenceId = string), which is really just following the common convention - type for a simple alias to an existing type, interface for an object shape - rather than a decision that changes behavior here. doesnt actually matter for this codebase either way.
+q: is there a data-shape problem here typescript cant catch on its own,
+because the bad data only shows up at runtime? what would you need
+instead?
+yes - the status/relevance casing issue is exactly this. if i had typed
+status as a strict list like "unreviewed" | "reviewed" | "flagged", that
+type would be lying about several real records the moment the json
+actually loads, and typescript would never notice, because it trusts
+whatever i tell it a fetch result looks like - it doesnt actually check
+the real bytes coming back from the file. thats why i kept status/relevance
+as plain string instead of a strict type - a strict type here would have
+been a fake promise. what youd actually need for this is runtime
+validation - a tool (like zod) or a manual check that runs after the real
+data arrives and actually verifies its shape, instead of just trusting a
+type that only exists at compile time.
+
+one more thing worth remembering here: typescript only exists at compile
+time - once i run tsc, it checks my code, then gets completely removed
+before the app actually runs in the browser (this is called "type
+erasure"). so even "as Person[]" is just me telling the compiler "trust me,
+this will look like this" - it never actually opens evidence.json and
+checks each field. thats the real reason it cant catch things like the
+nova-byte inconsistency: by the time the real data actually loads, in the
+real browser, typescript is already gone.
+
+q: whats the difference between interface and type for an object shape?
+which did i use, does it matter here?
+for a simple, flat object shape like these, interface and type can
+describe the exact same thing - functionally interchangeable here. i used
+interface for the 5 domain shapes (Person, Evidence, etc) and type for the
+3 id aliases (PersonId, LocationId, EvidenceId = string) - just following
+the common convention (type for a simple alias, interface for an object
+shape), not a decision that actually changes anything in this project.
+
+
+DEMO 7
+
+converted every remaining .js file: state.js, navigation.js, storage.js,
+main.js, and all 5 view files. state.ts now uses a real AppState interface
+(built on the same types.ts domain types from demo 6), replacing the
+temporary state.d.ts shadow file from demo 6 - deleted that since it was
+only ever a placeholder for this. tightened tsconfig.json too: removed
+allowJs and checkJs now that there's no plain js left in the app for them
+to accommodate.
+
+npm run typecheck is clean across the whole app now, still under the same
+strict-only settings from demo 5 - didnt loosen anything just to get there.
+
+found one real gap on the way, not something i introduced on purpose: once
+every single file became .ts, eslint stopped matching any files at all
+(its config only ever looked for .js extensions). it still runs and exits
+without errors, so it looks fine, but its not actually checking anything
+anymore. the proper fix (typescript-eslint) only supports typescript
+versions below 6.1.0, and this project is on 7.0.2 - a full major version
+past what it supports. forcing it anyway, or downgrading typescript just to
+make this one tool work, both felt riskier than just being honest about
+it. so this stays documented as a known, real limitation rather than
+something quietly ignored.
+
+found more than the required 3 spots where the compiler made me actually
+stop and think - picked the most interesting ones:
+
+1. new Date(a.time) - new Date(b.time) (sorting by date) - typescript
+   refuses this outright, even though it works completely fine when the
+   app actually runs (dates can be subtracted directly in js). fixed by
+   writing .getTime() on both sides explicitly - same result, just spelled
+   out instead of relying on a coercion rule most people dont know off the
+   top of their head. verdict: not a bug, just the compiler making the
+   code say what its actually doing instead of relying on an invisible js
+   trick.
+
+2. document.getElementById("view-" + hash) in navigation.ts - this always
+   returns "element or null" since the id is built from a variable, not a
+   fixed piece of text typescript can be sure about. this was the one spot
+   where i added a real null-check instead of just telling typescript to
+   trust me - because unlike every other id in this app (which are fixed,
+   always-there strings from index.html), this one is assembled at
+   runtime, so it can genuinely not exist. verdict: a small, real gap the
+   original code had and never noticed - not currently causing any visible
+   bug, but a future change elsewhere could have silently broken this
+   without anyone noticing, and now its actually protected.
+
+3. event.target across nearly every click/change handler - by default,
+   typescript only knows event.target as a very generic "target", without
+   things like .value or .classList that real dom elements have. every
+   single event handler in this app needs one of those. fixed each one by
+   telling typescript specifically what kind of element its dealing with
+   at that exact spot. verdict: not a bug, just the browser types being
+   deliberately vague about something a specific listener always knows for
+   certain.
+
+4. window.navigateTo = navigateTo (and 5 more like it) - these are the
+   same functions from exercise 1 that get attached to window so old
+   inline onclick attributes in index.html can still find them. typescript
+   has no idea these extra properties exist on window. fixed by properly
+   telling typescript about them (extending window's real type), instead
+   of just turning off checking with any - so a typo in one of these
+   property names would now actually get caught.
+
+5. a form field fallback used the number 50 where a string "50" was
+   actually expected (since form input values are always strings). this
+   worked by accident because the browser silently converts numbers to
+   strings when needed - typescript doesnt know about that browser trick,
+   so it correctly flagged the mismatch. fixed the literal to be a real
+   string. verdict: sloppy but harmless - exactly the kind of thing that
+   works by luck for years until something changes and it quietly breaks.
+
+confirmed the app still behaves identically: ran the same 5-view browser
+check as every previous demo, plus a deeper pass specifically on the areas
+this demo touched most - bookmark toggle, evidence status/relevance
+changes, note saving, the timeline modal opening/closing, the people-to-
+evidence filter link. zero console errors. one check came back unexpected
+at first (a status badge i expected to see wasnt there) - turned out to be
+a mistake in my own test, not a real problem: that badge was never meant
+to show up in that specific view, in either the old or new version.
+confirmed this by actually reading the rendering code directly, not just
+assuming.
+
+q: show one specific type error you actually had to think about. what did
+it tell you that plain js review/testing hadnt?
+the date-subtraction one (finding 1). plain code review never would have
+caught this - its completely normal, working javascript, i've written that
+exact line before without a second thought. what it actually told me: the
+code was relying on a hidden coercion rule that isnt obvious just from
+reading it, and every future reader would have to already know that trick
+to understand why the line works. testing wouldnt catch this either, since
+the runtime behavior was already correct - this wasnt a "the code does the
+wrong thing" problem, it was a "the code doesnt explain what its doing"
+problem, which only a real type checker (not just running the code) can
+actually surface.
+
+q: when (if ever) is reaching for any or ! the right call during a
+migration like this? where did you draw the line?
+i never used any anywhere in this whole migration - everywhere i couldve
+reached for it, i wrote a real type instead. i did use ! (telling
+typescript "trust me, this exists"), but only for elements whose ids are
+fixed, always-present markup straight from index.html - things that
+structurally cannot be missing. the one time an id wasnt fixed like that
+(finding 2, built from a variable), i wrote a real null check instead of
+!. so the actual rule i followed: any was never acceptable since it would
+have undone the entire point of this exercise, and ! is only fine exactly
+where a real check would be pointless code that could never actually run.
+
+q: did the migration reveal anything that was a genuine, previously-
+unnoticed bug, or was it mostly noise? how am i confident which it was?
+mostly noise - exercise 1 already found and fixed the real logic bugs, and
+this migration's job was about types, not behavior. confirmed that by
+running the exact same behavior checks i ran after every previous demo and
+getting identical results every time, plus extra testing specifically on
+the areas touched hardest here. that said, two findings are closer to
+"real, if minor" than pure noise: finding 2 (the navigation null-check) was
+a genuine weak spot the original code had and got away with purely by
+luck - not an active bug, but something that could have quietly broken
+later, and its actually protected now. finding 5 (the "50" vs 50 mismatch)
+was genuinely sloppy and only worked by accident. neither is a "the app
+was doing the wrong thing" bug like exercise 1's bugs were - both are
+"this could have silently broken for a dumb reason later" gaps that are
+just closed now instead.
+
+
+DEMO 8
+
+github actions runs commands automatically whenever something happens in
+the repo, like a push. this is what "ci" (continuous integration) means -
+automatically checking every change instead of trusting that whoever
+pushed it tested it themselves.
+
+three terms:
+- workflow = the whole file (ci.yml) - has a name, reacts to triggers
+- job = one thing a workflow runs. mine only has one, "lint-and-format",
+  but a workflow could have several, running in parallel or depending on
+  each other
+- step = one single command inside a job, run in order. mine has 5:
+  checkout, setup-node, install, lint, check formatting
+
+quick walkthrough of ci.yml:
+- "on: push / pull_request" - the trigger, runs on every push and pull
+  request
+- "checkout" - downloads the repo's code onto a fresh temporary machine
+- "setup-node" (node 22, matches the manuscript's own ci example) with
+  "cache: npm" - caches already-downloaded packages keyed on
+  package-lock.json, so later runs dont redownload everything
+- "npm ci" (not npm install) - does a clean install strictly from the
+  lockfile, and fails outright if package.json and package-lock.json
+  disagree - exactly what you want in ci, not "install whatever resolves"
+- "lint" - runs eslint. currently matches zero files because of demo 7s
+  typescript-eslint gap - a real, correctly wired step, just not exercising
+  anything meaningful against 100% typescript source right now
+- "format:check" - a new script, prettier --check instead of --write - it
+  only reports problems, never rewrites files. ci should only ever report
+  a problem, never silently fix and commit something behind your back.
+  this is the step actually doing real work in this specific run, since
+  prettier isnt blocked by the same peer-dependency issue as eslint
+
+how i tested this myself, with real github actions runs:
+1. pushed the workflow itself (commit 1196bb8) - confirmed a clean
+   baseline run, both steps green
+2. pushed a second commit (d4bdab6) that deliberately breaks formatting
+   only (mixed indentation/quotes), leaving lint/typescript untouched -
+   watched it fail, and checked the per-step breakdown: lint passed,
+   "check formatting" failed, exactly as expected
+3. fixed it with npm run format, pushed a third commit (d3e0a5e) -
+   watched it go green again
+
+all 3 runs are real and checkable at
+github.com/ZeynepSerttas/mystery-road-awe-2026/actions
+
+q: whats the difference between a workflow, a job, and a step? point to
+one of each.
+workflow = the whole ci.yml file. job = "lint-and-format", the one thing
+this workflow runs (could have more than one, even running at the same
+time). step = each individual command inside the job, run in order - 5
+total, either an action (like actions/checkout@v4) or a plain command
+(like npm run lint).
+
+q: why should lint/format run in ci, if it could already run on a
+developers machine before pushing?
+because "could run locally" and "did run locally" arent the same thing -
+nothing stops someone from pushing without running it, or having a
+slightly different local setup. ci runs the exact same check, the exact
+same way, on every single push, with no dependence on anyone remembering.
+it also helps anyone reviewing a pull request - they get a pass/fail
+signal without pulling the branch and running anything themselves.
+
+q: what is dependency caching doing here, what happens if you remove it?
+"cache: npm" caches already-downloaded packages (not node_modules itself)
+keyed on package-lock.json, so a later run can reuse them instead of
+refetching from scratch. correctness-wise, removing it changes nothing -
+npm ci always does a full clean install from the lockfile either way.
+speed-wise, removing it means every run redownloads everything from
+scratch, which is slower and adds unnecessary risk (network issues,
+registry rate limits) for zero actual benefit.
+
+
+DEMO 9
+
+"deploying" here means: automatically publishing the built app to a real,
+public website that anyone can open, whenever code gets pushed - no
+manual uploading, no clicking anything by hand.
+
+what github pages is: githubs free web hosting service - it takes files
+from a repository and turns them into a real, publicly reachable website.
+this project is now live at
+https://zeynepserttas.github.io/mystery-road-awe-2026/ - anyone can open
+that url, not just me on my own computer.
+
+before writing the actual workflow, i found and fixed a real problem
+first. github pages hosts this project under
+"username.github.io/mystery-road-awe-2026/" - a subfolder, not the main
+domain. but vite's build by default writes asset paths as if the site
+lived at the very root of the domain (like "/assets/index.js" instead of
+"/mystery-road-awe-2026/assets/index.js"). i opened dist/index.html myself
+and confirmed this was actually happening - if id deployed without fixing
+it, the page itself would have loaded, but every script and stylesheet
+would have 404'd, since the browser would have looked for them in the
+wrong place. fixed it in vite.config.js by setting the "base" path to
+"/mystery-road-awe-2026/" specifically for production builds, while
+leaving local development untouched. rebuilt and confirmed the asset paths
+in dist/index.html were now correct.
+
+verifying this locally ran into two false alarms along the way, both
+sorted out with actual evidence instead of just guessing:
+1. an unrelated quirk in a local testing tool, not a real problem
+2. a mistake in the test setup itself (a missing slash in a url)
+neither was a real bug in the app - once both were sorted, the actual fix
+tested clean.
+
+wrote .github/workflows/deploy.yml:
+- triggers only on push to main (not pull requests) - a pr from someone
+  elses branch shouldnt be able to publish anything to the live site
+- needs specific permissions: contents: read (to check out the code),
+  pages: write and id-token: write (needed because the deploy step proves
+  who it is using a short-lived, github-issued token instead of a stored
+  password/secret)
+- two separate jobs: "build" (checkout, node, install, lint, build the
+  app, then package dist/ as something github recognizes as "ready to
+  deploy"), and "deploy" (takes that package and actually publishes it)
+- added a setting so two pushes happening close together cant accidentally
+  race each other and mess up which version actually goes live
+
+how i tested this myself, for real, not just described:
+1. pushed the workflow itself, watched both this new workflow and demo 8's
+   existing one run - both succeeded
+2. opened the actual live url
+   (https://zeynepserttas.github.io/mystery-road-awe-2026/) myself and
+   clicked through all 5 views, same check as every previous demo - 18
+   evidence items, search/sort working, 6 people/6 locations, 15 timeline
+   events, hypothesis save, zero console errors - on the real, live,
+   publicly deployed site, not a local version
+3. made a small, real, visible change (added a line to the footer) and
+   pushed it with zero manual deploy steps - watched the workflow run on
+   its own and confirmed the new line actually showed up on the live site
+   afterward
+4. also opened devtools on the live site myself and checked the network
+   tab - confirmed the js file actually loads from
+   ".../mystery-road-awe-2026/assets/..." with a 200 status, proving the
+   base path fix from earlier actually works in the real deployment, not
+   just locally
+
+q: why does the deploy workflow re-run lint and build itself, instead of
+trusting "it already passed on my machine" or reusing the other
+workflow's result?
+because a workflow run only proves something about the exact code and
+exact environment it actually ran against - "worked on my machine" proves
+nothing about what actually got pushed, and even the other workflow
+running on the same push is a completely separate, independent run with
+its own checkout, theres no automatic handoff between them. rebuilding
+from a clean checkout here is what actually guarantees the thing being
+published matches exactly what got pushed - not someones possibly-outdated
+local files.
+
+q: what's the actual mechanism this workflow uses to publish to pages?
+explain concretely.
+its githubs official actions-based method, not the older trick of pushing
+to a special branch. one step packages the dist/ folder into something
+github recognizes as "ready to deploy". a second step then actually
+publishes that package, proving its identity using a short-lived token
+github generates just for this one run - no password or secret stored
+anywhere. github's own pages infrastructure then serves whatever was most
+recently published this way. nothing gets force-pushed anywhere, theres no
+separate branch holding a copy of the site.
+
+q: what would you need to change to deploy to a different host instead
+(netlify, vercel, sftp)? what stays the same?
+the build part stays basically identical - checkout, install, lint, build
+- since none of that cares where the output ends up, it just produces the
+dist/ folder. what changes is only the very last step: instead of the
+github-pages-specific publishing steps, youd use whatever that other
+host's own publishing method is (most of them have their own action or
+cli tool). the permissions would also change - pages: write and
+id-token: write are specific to github pages, a different host would
+usually need an api key or password stored as a secret instead. one more
+real thing that would need to change: vite.config.js's base path is set
+to "/mystery-road-awe-2026/" specifically because of how github pages
+serves a project like this in a subfolder - most other hosts serve a site
+at its own root address, so that setting would go back to just "/".
+
+
+DEMO 10
+
+introduced a real type error on purpose - one line in format.ts, assigning
+a string value into a variable typed as number. deliberately picked a type
+error over a lint failure, since lint currently matches zero .ts files
+(the demo 7 gap) - a lint failure right now would prove nothing, it would
+just show the same silent no-op the gap already is. a type error is
+guaranteed to be caught by tsc no matter what.
+
+checked locally before pushing what this would and wouldnt catch:
+- npm run lint - passes (the known gap)
+- npm run format:check - passes (this isnt a formatting issue)
+- npm run typecheck - fails, exactly as expected
+
+this surfaced something real i hadnt fully noticed before: ci.yml (demo 8)
+never runs a type-check or build step at all - only lint and format:check.
+so this exact broken commit showed ci.yml passing while shipping code that
+was guaranteed to fail a real build. only deploy.yml actually catches it,
+since it runs a real build step. pushed it and confirmed exactly that:
+CI workflow completed successfully, Deploy workflow failed. checked the
+deploy runs step-by-step breakdown: lint succeeded, build failed, and
+everything after that (packaging the site, the entire separate deploy job)
+shows as skipped - never even ran. exactly what the task asks for: it
+failed before reaching the actual deploy step, not during or after it.
+
+while the broken commit was sitting on main, i checked the real public url
+myself - it was still showing the previous, working version, completely
+unaffected by the failed run.
+
+fixed it, pushed again, watched both workflows go green for real.
+
+q: when your build step fails, does the previously-deployed version stay
+live, get taken down, or something else? is that what you want?
+stays live - confirmed directly by checking the real url myself while the
+broken commit was on main. this happens because a failed run never
+actually gets to the step that publishes anything, so the site just keeps
+showing whatever was last successfully published. this is exactly the
+behavior i want - a broken commit should never be able to take the live
+site down, it should fail loudly and leave everything as it was until
+someone actually fixes it.
+
+q: what permissions/secrets does this deploy workflow actually need, where
+are they configured?
+no stored secrets anywhere - the only credential involved is a short-lived
+token github generates automatically for just this one run, and that only
+works because of three lines in deploy.yml's permissions section:
+contents: read (to check out the code), pages: write (lets it actually
+publish), and id-token: write (lets it request that temporary token in the
+first place). theres also a setting outside the workflow file, in the
+repos own settings (pages > source, set to "github actions") - without
+that, the workflow would fail even with correct permissions, since there
+would be nowhere to actually publish to. the risk of giving too many
+permissions here: id-token specifically is what a compromised workflow (a
+malicious commit, or a compromised third-party tool) could misuse to
+generate tokens for whatever this workflow is allowed to do - keeping
+these permissions this narrow limits how much damage that could actually
+cause.
+
+q: whats the difference between on: push, on: pull_request, and
+on: workflow_dispatch? which did you use for which workflow, why?
+push runs a workflow against a specific commit thats landed on a branch.
+pull_request runs against a proposed merge, before its actually accepted -
+including from branches that arent trusted yet. workflow_dispatch is a
+manual button someone presses on purpose, not triggered by any git action
+automatically. ci.yml uses both push and pull_request on purpose - you
+want lint/format feedback as early as possible, even before something is
+merged. deploy.yml only uses push to main, no pull_request - a pull
+request is by definition not-yet-accepted, maybe-untrusted code that
+shouldnt be able to publish to the live site just by being opened. that
+pairing is right because it checks everything early, but only publishes
+what actually made it into main.
