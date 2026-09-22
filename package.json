@@ -5,7 +5,9 @@
   "description": "Project ReMotion – a browser-based investigation portal for a fictional AI rehabilitation robot incident.",
   "type": "module",
   "scripts": {
-    "dev": "vite"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "repository": {
     "type": "git",
