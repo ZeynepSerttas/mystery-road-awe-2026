@@ -1,6 +1,6 @@
 // Small pure helpers. No state, no DOM - give them a value, get a value back.
 
-export function formatDate(ts) {
+export function formatDate(ts: string | number | undefined | null) {
   if (!ts) return "Unknown date";
   const d = new Date(ts);
   if (isNaN(d.getTime())) return ts;
@@ -11,20 +11,20 @@ export function formatDate(ts) {
   );
 }
 
-export function getStatusBadgeClass(status) {
+export function getStatusBadgeClass(status: string | undefined) {
   const s = (status || "").toLowerCase();
   if (s === "reviewed") return "badge-reviewed";
   if (s === "flagged") return "badge-flagged";
   return "badge-unreviewed";
 }
 
-export function getRelevanceBadgeClass(relevance) {
+export function getRelevanceBadgeClass(relevance: string | undefined) {
   const r = (relevance || "").toLowerCase();
   if (r === "relevant") return "badge-relevant";
   return "badge-unreviewed";
 }
 
-export function certaintyBadgeClass(certainty) {
+export function certaintyBadgeClass(certainty: string | undefined) {
   if (certainty === "confirmed") return "reviewed";
   if (certainty === "contradictory") return "critical";
   if (certainty === "reported") return "flagged";
