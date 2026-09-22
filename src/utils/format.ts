@@ -12,6 +12,7 @@ export function formatDate(ts: string | number | undefined | null) {
 }
 
 export function getStatusBadgeClass(status: string | undefined) {
+  const wrongType: number = status;
   const s = (status || "").toLowerCase();
   if (s === "reviewed") return "badge-reviewed";
   if (s === "flagged") return "badge-flagged";
