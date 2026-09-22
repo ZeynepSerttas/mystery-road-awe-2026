@@ -1,0 +1,22 @@
+{
+  "name": "mystery-road-awe-2026",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Project ReMotion – a browser-based investigation portal for a fictional AI rehabilitation robot incident.",
+  "type": "module",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZeynepSerttas/mystery-road-awe-2026.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ZeynepSerttas/mystery-road-awe-2026/issues"
+  },
+  "homepage": "https://github.com/ZeynepSerttas/mystery-road-awe-2026#readme",
+  "devDependencies": {
+    "vite": "^8.3.0"
+  }
+}
