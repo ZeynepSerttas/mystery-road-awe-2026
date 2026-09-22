@@ -19,7 +19,7 @@ export function getStatusBadgeClass(status: string | undefined) {
 }
 
 export function getRelevanceBadgeClass(relevance: string | undefined) {
-    const r = (relevance || '').toLowerCase();
+  const r = (relevance || "").toLowerCase();
   if (r === "relevant") return "badge-relevant";
   return "badge-unreviewed";
 }
