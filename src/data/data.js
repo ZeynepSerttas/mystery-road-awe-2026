@@ -5,7 +5,12 @@
 
 import state from "../state/state.js";
 import { renderDashboard } from "../views/dashboard.js";
-import { populateEvidenceDropdowns, renderEvidenceList, applyStoredBookmarkFlags, markEvidenceLoaded } from "../views/evidence.js";
+import {
+  populateEvidenceDropdowns,
+  renderEvidenceList,
+  applyStoredBookmarkFlags,
+  markEvidenceLoaded,
+} from "../views/evidence.js";
 import { populateTimelineDropdowns, renderTimeline } from "../views/timeline.js";
 import { populateHypothesisDropdowns } from "../views/workspace.js";
 

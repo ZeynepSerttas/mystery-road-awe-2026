@@ -7,11 +7,7 @@ import { evidenceMentionsPerson } from "../utils/lookups.js";
 import { navigateTo } from "../navigation/navigation.js";
 import { renderEvidenceList } from "./evidence.js";
 
-// Only switchPeopleTab writes this and nothing reads it, so it stays here.
-let currentPeopleTab = "people";
-
 export function switchPeopleTab(tab) {
-  currentPeopleTab = tab;
   const peoplePanel = document.getElementById("peoplePanel");
   const locationsPanel = document.getElementById("locationsPanel");
   const peopleTabBtn = document.getElementById("tabPeopleBtn");
@@ -47,8 +43,14 @@ export function renderPeople() {
 
     html += '<div class="person-card">';
     html += '<div class="person-card-header">';
-    html += '<img class="person-avatar" src="' + person.avatar + '" alt="Portrait of ' + person.name + '">';
-    html += "<div><h3>" + person.name + "</h3><div class=\"person-role\">" + person.role + "</div></div>";
+    html +=
+      '<img class="person-avatar" src="' +
+      person.avatar +
+      '" alt="Portrait of ' +
+      person.name +
+      '">';
+    html +=
+      "<div><h3>" + person.name + '</h3><div class="person-role">' + person.role + "</div></div>";
     html += "</div>";
     html += "<p><strong>Speciality:</strong> " + person.speciality + "</p>";
     html += "<ul>";
@@ -56,9 +58,12 @@ export function renderPeople() {
       html += "<li>" + person.responsibilities[r] + "</li>";
     }
     html += "</ul>";
-    html += '<div class="person-statement">&ldquo;' + person.statement + '&rdquo;</div>';
+    html += '<div class="person-statement">&ldquo;' + person.statement + "&rdquo;</div>";
     html += "<p>" + count + " related evidence item" + (count === 1 ? "" : "s") + " &mdash; ";
-    html += '<button type="button" class="evidence-count-link" data-person-id="' + person.id + '">view</button></p>';
+    html +=
+      '<button type="button" class="evidence-count-link" data-person-id="' +
+      person.id +
+      '">view</button></p>';
     html += "</div>";
   }
   container.innerHTML = html;

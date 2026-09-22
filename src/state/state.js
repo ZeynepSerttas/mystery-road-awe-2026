@@ -23,8 +23,8 @@ export default {
     evidence: false,
     people: false,
     timeline: false,
-    workspace: false
+    workspace: false,
   },
 
-  notesStore: {}
+  notesStore: {},
 };

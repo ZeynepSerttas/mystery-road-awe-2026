@@ -1,4 +1,8 @@
-import { loadBookmarksFromStorage, loadNotesFromStorage, loadNoteAsync } from "./storage/storage.js";
+import {
+  loadBookmarksFromStorage,
+  loadNotesFromStorage,
+  loadNoteAsync,
+} from "./storage/storage.js";
 import { loadAllData } from "./data/data.js";
 import { navigateTo, handleHashChange } from "./navigation/navigation.js";
 import { switchPeopleTab } from "./views/people.js";
@@ -10,7 +14,7 @@ import {
   clearFilters,
   handleSearchInput,
   closeEvidenceDetail,
-  saveCurrentNote
+  saveCurrentNote,
 } from "./views/evidence.js";
 
 // ---------------------------------------------------------------------
