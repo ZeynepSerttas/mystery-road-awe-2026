@@ -4,7 +4,9 @@
   "private": true,
   "description": "Project ReMotion – a browser-based investigation portal for a fictional AI rehabilitation robot incident.",
   "type": "module",
-  "scripts": {},
+  "scripts": {
+    "dev": "vite"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ZeynepSerttas/mystery-road-awe-2026.git"
