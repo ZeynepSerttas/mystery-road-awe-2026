@@ -1093,3 +1093,48 @@ src/vite-env.d.ts so typescript knows about import.meta.env.
 checked: typecheck, lint, format:check and build pass. rendered /react/ in
 headless chrome with no hash (dashboard), #people (people page, people
 button active) and #nope (falls back to dashboard).
+
+DEMO 10
+
+data loading lives in its own file, src/react/loadCaseData.ts, with one
+function loadCaseData() that fetches the five json files (using BASE_URL)
+and reads the bookmark ids from localStorage (same remotion_bookmarks key
+as vanilla, only read, never written). it returns one CaseData object.
+main.tsx renders <LoadingOverlay /> first, awaits loadCaseData() and then
+renders <App data={data} /> into the same root, or a short error message
+if loading failed. so react only starts with the real data already there
+and the dashboard needs no useEffect and no loading state. this is a
+placeholder on purpose: in exercise 6 the json files get replaced by a
+backend and loading moves into a useEffect, and loadCaseData.ts is the
+only place that knows where the data comes from.
+
+data flow is just props: main.tsx -> App -> DashboardPage -> the small
+components. DashboardPage uses CaseSummaryCard, StatCard (five times),
+ReviewProgress, RecentEvidenceList and RecentTimelineList, six components
+in total. the "how to use this portal" card is plain static jsx inside
+DashboardPage, its four buttons are links with href="#evidence" etc. so
+they go through the same hashchange routing. added a small a.btn rule in
+styles.css so a link with .btn looks like the buttons (display
+inline-block, no underline), vanilla has no a.btn so nothing changes there.
+formatDate and getStatusBadgeClass are reused from utils/format.ts.
+
+derived values (reviewed count, review percentage, the last five evidence
+items and timeline events) are calculated inside the components on every
+render and never stored. thats the big difference to the vanilla
+dashboard, which only re-rendered on the first visit (viewRendered flag)
+and could show old numbers. here there is no cache that can go stale, if
+the props change react just runs the function again. the recent lists use
+slice(-5).reverse(), slice makes a copy first so reverse never flips the
+original arrays (that would have corrupted the order every time you come
+back to the dashboard).
+
+known limit: bookmarks are read once at startup, so bookmarking something
+in the vanilla app shows up in the react dashboard only after a reload.
+fine for now since react has no evidence view yet.
+
+checked: typecheck, lint, format:check and build pass. rendered both
+dashboards in headless chrome and the case summary, all five stats
+(18, 6, 6, 0, 1), 6% progress and both recent lists are identical. drove
+chrome through evidence, people, timeline, workspace and back, clicked a
+nav button, an intro link and used history.back(), the dashboard showed
+exactly the same values every time.

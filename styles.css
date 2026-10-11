@@ -385,6 +385,12 @@ a:focus-visible {
   font-size: 0.78rem;
 }
 
+/* Links styled as buttons (used by the React dashboard) */
+a.btn {
+  display: inline-block;
+  text-decoration: none;
+}
+
 /* Evidence grid */
 .evidence-grid {
   display: grid;

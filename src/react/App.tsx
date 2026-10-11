@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ViewName } from "../types";
 import AppHeader from "./components/AppHeader";
+import type { CaseData } from "./loadCaseData";
 import DashboardPage from "./pages/DashboardPage";
 import EvidencePage from "./pages/EvidencePage";
 import PeoplePage from "./pages/PeoplePage";
@@ -21,7 +22,11 @@ function getViewFromHash(): ViewName {
   return "dashboard";
 }
 
-function App() {
+type AppProps = {
+  data: CaseData;
+};
+
+function App(props: AppProps) {
   const [currentView, setCurrentView] = useState(getViewFromHash());
 
   // Listen for hash changes (nav clicks, links, back/forward button)
@@ -38,7 +43,7 @@ function App() {
     };
   }, []);
 
-  let page = <DashboardPage />;
+  let page = <DashboardPage data={props.data} />;
   if (currentView === "evidence") {
     page = <EvidencePage />;
   } else if (currentView === "people") {
