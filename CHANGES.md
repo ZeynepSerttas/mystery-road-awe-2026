@@ -1018,3 +1018,42 @@ request is by definition not-yet-accepted, maybe-untrusted code that
 shouldnt be able to publish to the live site just by being opened. that
 pairing is right because it checks everything early, but only publishes
 what actually made it into main.
+
+EXERCISE 3
+
+DEMO 6
+
+installed react and react-dom as normal dependencies since the live page
+needs them at runtime, and @vitejs/plugin-react, @types/react and
+@types/react-dom as devDependencies since those only matter while building
+and type checking. the plugin is what lets vite turn jsx in .tsx files into
+plain javascript (plus fast refresh in dev). in tsconfig.json i added
+"jsx": "react-jsx" so tsc understands .tsx too and doesnt need
+"import React" at the top of every file. src was already in include, so
+src/react is covered automatically.
+
+coexistence: the vanilla app stays exactly where it was on index.html, the
+react version gets its own second page at react/index.html with
+src/react/main.tsx as its entry. vite.config.js now lists both pages under
+build.rollupOptions.input so the build outputs dist/index.html and
+dist/react/index.html, which on github pages means /mystery-road-awe-2026/
+for vanilla and /mystery-road-awe-2026/react/ for react. picked a folder
+(react/index.html) instead of react.html on purpose: in exercise 4 there
+will be a real router with real paths like /react/team/people, and
+/react/ works as the routers base path, react.html/team/people would not.
+both pages link the same styles.css so the react version looks the same
+without copying any css. the opposite choice (swap everything over at
+once) would mean the whole app is broken until every view is migrated.
+
+main.tsx finds the #root div, makes a react root with createRoot and
+renders <App />. App is just a heading and a sentence for now, enough to
+prove jsx compiles and shows up.
+
+still true: npm run lint only looks at .js files (no typescript parser in
+eslint.config.js, same gap as before), so .ts and .tsx files including all
+the new react code are not linted. decided to leave it, no new packages.
+typecheck and build do check the .tsx files.
+
+checked: typecheck, lint, format:check and build all pass, dist has both
+html files with asset paths under /mystery-road-awe-2026/, and the dev
+server serves /react/ with the react refresh script injected.
