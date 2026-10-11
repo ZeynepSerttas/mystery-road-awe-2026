@@ -1057,3 +1057,39 @@ typecheck and build do check the .tsx files.
 checked: typecheck, lint, format:check and build all pass, dist has both
 html files with asset paths under /mystery-road-awe-2026/, and the dev
 server serves /react/ with the react refresh script injected.
+
+DEMO 9
+
+built the shell in react: AppHeader (logo, title, subtitle), MainNav (the
+five buttons) and LoadingOverlay (spinner + message). LoadingOverlay is not
+used yet, main.tsx starts showing it in demo 10 when there is actually
+something to load. five pages in src/react/pages, DashboardPage gets real
+content in demo 10, the other four are placeholders with a link to the same
+view in the vanilla app. the footer stays inline in App, too small for its
+own component.
+
+routing without a library: the current view is a useState in App. a
+useEffect adds a hashchange listener once (empty dependency array) that
+reads the hash and calls setCurrentView, and the cleanup function removes
+it again. the nav buttons dont call any render function, they only set
+window.location.hash, so the url is the one source of truth and the back
+button works for free. getViewFromHash checks the hash against the list of
+valid views and returns "dashboard" for anything else, same fallback as
+handleHashChange in the vanilla app. App picks the page with a plain
+if/else chain. all of the routing is in App.tsx on purpose so it is easy
+to swap for react router in exercise 4.
+
+the difference to the vanilla version: there i had to toggle the .active
+class on every section and nav button by hand and remember which view was
+already rendered (viewRendered). here App just renders the one page that
+matches currentView and MainNav works out the active button from a prop.
+every page section always has "view active" since only the current one
+exists in the dom.
+
+the logo and the "open in vanilla app" links use import.meta.env.BASE_URL
+so they work in dev and under /mystery-road-awe-2026/. added
+src/vite-env.d.ts so typescript knows about import.meta.env.
+
+checked: typecheck, lint, format:check and build pass. rendered /react/ in
+headless chrome with no hash (dashboard), #people (people page, people
+button active) and #nope (falls back to dashboard).
