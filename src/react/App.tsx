@@ -4,18 +4,23 @@ import AppHeader from "./components/AppHeader";
 import type { CaseData } from "./loadCaseData";
 import DashboardPage from "./pages/DashboardPage";
 import EvidencePage from "./pages/EvidencePage";
-import PeoplePage from "./pages/PeoplePage";
+import PeopleLocationsPage from "./pages/PeopleLocationsPage";
+import type { PeopleTab } from "./pages/PeopleLocationsPage";
 import TimelinePage from "./pages/TimelinePage";
 import WorkspacePage from "./pages/WorkspacePage";
 
 const validViews: ViewName[] = ["dashboard", "evidence", "people", "timeline", "workspace"];
 
-// Reads the view from the URL hash, e.g. "#people" -> "people".
+// Reads the view from a hash, e.g. "#people" -> "people".
 // Anything unknown (or no hash at all) falls back to the dashboard.
-function getViewFromHash(): ViewName {
-  const hash = window.location.hash.replace("#", "");
+function getViewFromHash(hash: string): ViewName {
+  const name = hash.replace("#", "");
+  // Locations is a tab inside the People & Locations page
+  if (name === "locations") {
+    return "people";
+  }
   for (const view of validViews) {
-    if (view === hash) {
+    if (view === name) {
       return view;
     }
   }
@@ -27,12 +32,14 @@ type AppProps = {
 };
 
 function App(props: AppProps) {
-  const [currentView, setCurrentView] = useState(getViewFromHash());
+  // The whole hash is kept, not just the view, because "#people" and
+  // "#locations" are the same view but different tabs
+  const [currentHash, setCurrentHash] = useState(window.location.hash);
 
   // Listen for hash changes (nav clicks, links, back/forward button)
   useEffect(() => {
     function handleHashChange() {
-      setCurrentView(getViewFromHash());
+      setCurrentHash(window.location.hash);
     }
 
     window.addEventListener("hashchange", handleHashChange);
@@ -43,13 +50,20 @@ function App(props: AppProps) {
     };
   }, []);
 
+  const currentView = getViewFromHash(currentHash);
+
+  let activeTab: PeopleTab = "people";
+  if (currentHash === "#locations") {
+    activeTab = "locations";
+  }
+
   let page = <DashboardPage data={props.data} />;
   if (currentView === "evidence") {
     page = <EvidencePage />;
   } else if (currentView === "people") {
-    page = <PeoplePage />;
+    page = <PeopleLocationsPage data={props.data} activeTab={activeTab} />;
   } else if (currentView === "timeline") {
-    page = <TimelinePage />;
+    page = <TimelinePage data={props.data} />;
   } else if (currentView === "workspace") {
     page = <WorkspacePage />;
   }

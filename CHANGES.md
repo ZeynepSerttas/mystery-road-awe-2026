@@ -1138,3 +1138,70 @@ dashboards in headless chrome and the case summary, all five stats
 chrome through evidence, people, timeline, workspace and back, clicked a
 nav button, an intro link and used history.back(), the dashboard showed
 exactly the same values every time.
+
+
+EXERCISE 4
+
+DEMO 1-3
+
+one commit for all three since they are the same code: people &
+locations and timeline rebuilt in react, same css classes as vanilla so
+they look the same.
+
+new components, each with its own props type: PersonCard (person +
+evidenceCount), LocationCard (location), TimelineEventItem (event +
+locationNames). Panel is the children one: it only draws the white box
+with a title and puts whatever is between <Panel> and </Panel> inside.
+used it for real in the three dashboard boxes (review progress, recent
+evidence, recent timeline) which all had the same div + h3 written out by
+hand before. children instead of a data prop because Panel shouldnt know
+or care what goes in it, a progress bar and a list are both fine.
+
+PeoplePage became PeopleLocationsPage. the tabs are links (#people and
+#locations) and the page gets activeTab as a prop, no state. App now
+keeps the whole hash in state instead of just the view name, because
+#people and #locations are the same view, and setting the same view
+again would not re-render so the tab would never switch. getViewFromHash
+maps #locations to the people view so the nav button stays active.
+in exercise 4 demo 8 this hash becomes a real route.
+
+timeline: the four dropdowns are filled from the data (people, location
+ids, every event type once) and use defaultValue without onChange, so
+you can open them but nothing filters yet. timeline.json is already
+oldest first, which matches the default order. the "View E04" buttons
+from vanilla open a modal, thats interactivity for exercise 5, so react
+only shows "Evidence: E04, E05" as text.
+
+conditional rendering, different techniques on purpose: ternary for the
+active tab class and for which grid is shown, ternary for "item"/"items",
+&& for the optional location and evidence lines on a timeline event and
+for the empty state ("No timeline events match..."), and a lookup
+function (certaintyBadgeClass from utils/format.ts) for the badge colour.
+the && conditions are all comparisons like length > 0 or length === 0,
+so they are real booleans and never print a 0.
+
+lists: people, locations and timeline events use .map() with
+key={item.id}. responsibilities and contains have no ids, so the text
+itself is the key, checked that each text is unique per person/location.
+
+small things: avatar paths in people.json are relative, so PersonCard
+puts BASE_URL in front (would break under /react/team/people otherwise).
+the vanilla helpers in utils/lookups.ts read the vanilla state object,
+which is empty in react, so the evidence count and location name lookup
+are small functions inside the pages. evidence count checks id and name
+because evidence.json mixes "nova-byte" and "Nova Byte". added a.tab-btn
+to styles.css (no underline, normal text colour) since the tabs are links
+now.
+
+found while comparing: vanilla shows "0 related evidence items" for
+everyone if you open #people directly. renderPeople runs before
+evidence.json is loaded and the viewRendered flag stops it from ever
+running again. react shows the right numbers (3, 4, 5, 4, 4, 5) because
+it renders from the data it gets, there is no "already rendered" flag.
+
+checked: typecheck, lint, format:check and build pass, no innerHTML /
+createElement / appendChild in src/react. compared react and vanilla in
+headless chrome: 6 people, 6 locations, 15 events, same dropdown options,
+same text on every card (apart from the evidence part and the count),
+all avatars load, clicking the locations tab switches tab and keeps the
+nav button on people & locations.

@@ -1,5 +1,6 @@
 import type { Evidence } from "../../../types";
 import { getStatusBadgeClass } from "../../../utils/format";
+import Panel from "../Panel";
 
 type RecentEvidenceListProps = {
   evidence: Evidence[];
@@ -10,8 +11,7 @@ function RecentEvidenceList(props: RecentEvidenceListProps) {
   const recentEvidence = props.evidence.slice(-5).reverse();
 
   return (
-    <div className="dashboard-panel">
-      <h3>Recent evidence</h3>
+    <Panel title="Recent evidence">
       {recentEvidence.length === 0 && <p>No evidence loaded yet.</p>}
       {recentEvidence.map((item) => (
         <div key={item.id} className="mini-list-item">
@@ -19,7 +19,7 @@ function RecentEvidenceList(props: RecentEvidenceListProps) {
           <span className={"badge " + getStatusBadgeClass(item.status)}>{item.status}</span>
         </div>
       ))}
-    </div>
+    </Panel>
   );
 }
 

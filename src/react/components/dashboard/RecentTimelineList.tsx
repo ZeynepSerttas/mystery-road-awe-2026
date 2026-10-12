@@ -1,5 +1,6 @@
 import type { TimelineEvent } from "../../../types";
 import { formatDate } from "../../../utils/format";
+import Panel from "../Panel";
 
 type RecentTimelineListProps = {
   timeline: TimelineEvent[];
@@ -10,8 +11,7 @@ function RecentTimelineList(props: RecentTimelineListProps) {
   const recentEvents = props.timeline.slice(-5).reverse();
 
   return (
-    <div className="dashboard-panel">
-      <h3>Recent timeline events</h3>
+    <Panel title="Recent timeline events">
       {recentEvents.length === 0 && <p>No timeline events loaded yet.</p>}
       {recentEvents.map((event) => (
         <div key={event.id} className="mini-list-item">
@@ -20,7 +20,7 @@ function RecentTimelineList(props: RecentTimelineListProps) {
           {event.title}
         </div>
       ))}
-    </div>
+    </Panel>
   );
 }
 

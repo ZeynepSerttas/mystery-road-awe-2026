@@ -582,6 +582,12 @@ a.btn {
   cursor: pointer;
 }
 
+/* Tabs that are links (used by the React People & Locations page) */
+a.tab-btn {
+  text-decoration: none;
+  color: var(--color-text);
+}
+
 .tab-btn.active {
   background: var(--color-header-2);
   color: #fff;

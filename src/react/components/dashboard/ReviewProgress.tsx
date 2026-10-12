@@ -1,3 +1,5 @@
+import Panel from "../Panel";
+
 type ReviewProgressProps = {
   reviewedCount: number;
   totalCount: number;
@@ -11,13 +13,12 @@ function ReviewProgress(props: ReviewProgressProps) {
   }
 
   return (
-    <div className="dashboard-panel">
-      <h3>Review progress</h3>
+    <Panel title="Review progress">
       <div className="progress-bar-outer">
         <div className="progress-bar-inner" style={{ width: percent + "%" }}></div>
       </div>
       <p>{percent}% of evidence reviewed</p>
-    </div>
+    </Panel>
   );
 }
 
