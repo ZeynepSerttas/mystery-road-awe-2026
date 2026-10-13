@@ -4,6 +4,7 @@ import AppHeader from "./components/AppHeader";
 import type { CaseData } from "./loadCaseData";
 import DashboardPage from "./pages/DashboardPage";
 import EvidencePage from "./pages/EvidencePage";
+import KeyDemoPage from "./pages/KeyDemoPage";
 import PeopleLocationsPage from "./pages/PeopleLocationsPage";
 import type { PeopleTab } from "./pages/PeopleLocationsPage";
 import TimelinePage from "./pages/TimelinePage";
@@ -66,6 +67,11 @@ function App(props: AppProps) {
     page = <TimelinePage data={props.data} />;
   } else if (currentView === "workspace") {
     page = <WorkspacePage />;
+  }
+
+  // Throwaway page for Exercise 4 Demo 4, only reachable by typing #key-demo
+  if (currentHash === "#key-demo") {
+    page = <KeyDemoPage />;
   }
 
   return (

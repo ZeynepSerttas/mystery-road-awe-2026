@@ -1205,3 +1205,32 @@ headless chrome: 6 people, 6 locations, 15 events, same dropdown options,
 same text on every card (apart from the evidence part and the count),
 all avatars load, clicking the locations tab switches tab and keeps the
 nav button on people & locations.
+
+DEMO 4
+
+throwaway page src/react/pages/KeyDemoPage.tsx, clearly marked as not
+part of the app, no nav button. App shows it only for the hash
+#key-demo. it has a list of four people kept in useState (the only place
+in this exercise where useState is allowed) and a "reverse order" button
+that sets a reversed copy. the same list is rendered twice next to each
+other, each row is a name plus an empty text input. left list uses
+key={index}, right list uses key={item.id}. both columns use Panel.
+
+how to run it: npm run dev, open http://localhost:5173/react/#key-demo
+(after deploy: .../mystery-road-awe-2026/react/#key-demo). type each
+persons name into their own box in both lists, then click reverse order.
+left: the names flip but the typed texts stay where they were, so the box
+next to root harbor now says "Nova Byte". right: every text moves
+together with its person.
+
+why: the inputs have no value prop, so what you type only lives in the
+real dom input. react uses the key to decide which existing element
+belongs to which item. with key={index}, after reversing, key 0 is still
+the first row, so react keeps the first input (with its text) and only
+swaps the name text next to it. with key={item.id}, react sees that
+"root-harbor" moved to the top and moves the whole row, input included.
+
+checked: typecheck, lint, format:check and build pass. ran the steps
+above in headless chrome (localhost only, temporary profile inside the
+project folder, deleted afterwards): left column was wrong after reverse,
+right column was correct.
